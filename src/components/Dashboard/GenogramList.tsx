@@ -56,16 +56,18 @@ export const GenogramList = React.memo<GenogramListProps>(
           sorted.sort((a, b) => (b.people?.length || 0) - (a.people?.length || 0));
           break;
         case 'recent':
-        default:
-          sorted.sort((a, b) => {
-            const aTime = (typeof a.updatedAt === 'object' && 'toMillis' in a.updatedAt)
-              ? (a.updatedAt as any).toMillis()
-              : new Date(a.updatedAt as any).getTime();
-            const bTime = (typeof b.updatedAt === 'object' && 'toMillis' in b.updatedAt)
-              ? (b.updatedAt as any).toMillis()
-              : new Date(b.updatedAt as any).getTime();
-            return bTime - aTime;
-          });
+        default: {
+          const getTimestamp = (date: unknown): number => {
+            if (typeof date === 'number') return date;
+            if (date instanceof Date) return date.getTime();
+            if (typeof date === 'string') return new Date(date).getTime();
+            if (date && typeof date === 'object' && 'toMillis' in date) {
+              return (date as { toMillis(): number }).toMillis();
+            }
+            return 0;
+          };
+          sorted.sort((a, b) => getTimestamp(b.updatedAt) - getTimestamp(a.updatedAt));
+        }
       }
 
       return sorted;

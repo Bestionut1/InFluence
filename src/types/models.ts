@@ -1,233 +1,110 @@
 /**
- * Core TypeScript Models for PsychoGenealogy
- * Provides strict type definitions for all major entities
+ * Database model types for Firestore
+ * Re-exports genogram types and adds database-specific fields
  */
 
-/**
- * Person - Core family member entity
- */
-export interface Person {
-  // Identification
-  id: string;
-  name: string;
+import { Timestamp } from 'firebase/firestore';
+import type { Person, Relation, PersonProfile } from './genogram';
 
-  // Demographics
-  gender: 'male' | 'female' | 'non-binary' | 'unknown';
-  status: 'living' | 'deceased';
-  dateOfBirth?: string; // YYYY-MM-DD
-  dateOfDeath?: string; // YYYY-MM-DD
-  age?: number;
-
-  // Visual representation
-  isPrincipal?: boolean; // Main focus of genogram
-  position?: { x: number; y: number };
-  profileImage?: string; // Base64 or URL
-
-  // Psychological profiling
-  templateCategory?: TemplateCategory;
-  profileId?: string; // Reference to detailed profile
-
-  // Health & clinical data
-  healthHistory?: HealthRecord[];
-  medications?: MedicationRecord[];
-  causeOfDeath?: CauseOfDeath;
-  medicalConditions?: string[];
-
-  // Additional info
-  occupation?: string;
-  attributes?: string[]; // e.g., 'depression', 'anxiety'
-  significantEvents?: string[];
-  notes?: string;
-}
-
-/**
- * Relation - Connection between two people
- */
-export interface Relation {
-  id: string;
-  sourceId: string; // From person
-  targetId: string; // To person
-  type: RelationType;
-}
-
-/**
- * Genogram - Collection of people, relations, and profiles
- */
-export interface GenogramData {
-  people: Person[];
-  relations: Relation[];
-  profiles: PersonProfile[];
-}
+// Export types for backward compatibility
+export type { Person, Relation, PersonProfile };
 
 /**
  * GenogramDocument - Full genogram with metadata
  */
-export interface GenogramDocument extends GenogramData {
+export interface GenogramDocument {
   id: string;
   userId: string;
   title: string;
   description?: string;
-  createdAt: any; // Firestore timestamp
-  updatedAt: any; // Firestore timestamp
+  createdAt: Date | Timestamp;
+  updatedAt: Date | Timestamp;
   isPublic: boolean;
   sharedWith: string[];
+  people: Person[];
+  relations: Relation[];
+  profiles?: PersonProfile[];
 }
-
 /**
- * PersonProfile - Detailed psychological profile for a person
+ * Firestore-specific test result
  */
-export interface PersonProfile {
+export interface FirestoreTestResult {
   id: string;
   personId: string;
-  profileType: 'template' | 'custom';
-  templateCategory?: TemplateCategory;
-  description?: string;
-  psychologicalTraits?: string[];
-  coreWounds?: string[];
-  copingMechanisms?: string[];
-  strengthsAndResources?: string[];
-  therapeuticRecommendations?: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  genogramId: string;
+  testType: string;
+  results: Record<string, unknown>;
+  completedAt: Timestamp;
+  score?: number;
 }
 
 /**
- * HealthRecord - Medical/psychological condition tracking
+ * AI Analysis for person
  */
-export interface HealthRecord {
-  id: string;
+export interface PersonAIAnalysis {
+  id?: string;
   personId: string;
-  condition: string; // e.g., 'depression', 'diabetes'
-  severity: 'mild' | 'moderate' | 'severe' | 'critical';
-  status: 'active' | 'managed' | 'remission' | 'resolved';
-  diagnosedDate?: string; // YYYY-MM-DD
-  resolvedDate?: string; // YYYY-MM-DD
-  notes?: string;
-  treatedBy?: string;
-}
-
-/**
- * MedicationRecord - Medication tracking
- */
-export interface MedicationRecord {
-  id: string;
-  personId: string;
-  medicationName: string;
-  dosage?: string;
-  frequency?: string;
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string; // YYYY-MM-DD
-  prescribedBy?: string;
-  notes?: string;
-  sideEffects?: string[];
-}
-
-/**
- * Template categories from Bowen family systems theory
- */
-export type TemplateCategory =
-  | 'authoritarian-parent'
-  | 'neglectful-parent'
-  | 'enabling-parent'
-  | 'dependent-child'
-  | 'rebellious-child'
-  | 'peacekeeper'
-  | 'scapegoat'
-  | 'hero'
-  | 'lost-child'
-  | 'traumatized-adult'
-  | 'achiever'
-  | 'codependent';
-
-/**
- * Relationship types between people
- */
-export type RelationType =
-  // Blood relations
-  | 'parent-child'
-  | 'biological-sibling'
-  | 'half-sibling'
-  | 'full-sibling'
-  | 'twin'
-  | 'fraternal-twin'
-  | 'identical-twin'
-  | 'step-sibling'
-  // Partnerships
-  | 'partner'
-  | 'ex-partner'
-  | 'divorced'
-  // Emotional dynamics
-  | 'conflict'
-  | 'close'
-  | 'distant'
-  | 'fused'
-  | 'estranged';
-
-/**
- * Cause of death
- */
-export type CauseOfDeath =
-  | 'natural'
-  | 'illness'
-  | 'accident'
-  | 'suicide'
-  | 'homicide'
-  | 'unknown'
-  | 'other';
-
-/**
- * Genogram validation result
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationIssue[];
-  warnings: ValidationIssue[];
-}
-
-/**
- * Individual validation issue
- */
-export interface ValidationIssue {
-  code: string;
-  message: string;
-  personIds?: string[];
-  relationIds?: string[];
-  severity: 'error' | 'warning';
+  genogramId: string;
+  generatedAt: Timestamp;
+  patterns: string[];
+  recommendations: string[];
+  summary: string;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Type guards
  */
-export function isPerson(obj: any): obj is Person {
+export function isPerson(obj: unknown): obj is Person {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as any;
   return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    ['male', 'female', 'non-binary', 'unknown'].includes(obj.gender) &&
-    ['living', 'deceased'].includes(obj.status)
+    typeof o.id === 'string' &&
+    typeof o.name === 'string' &&
+    ['male', 'female', 'non-binary', 'unknown'].includes(o.gender) &&
+    ['living', 'deceased'].includes(o.status)
   );
 }
 
-export function isRelation(obj: any): obj is Relation {
+export function isRelation(obj: unknown): obj is Relation {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as any;
   return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.sourceId === 'string' &&
-    typeof obj.targetId === 'string' &&
-    typeof obj.type === 'string'
+    typeof o.id === 'string' &&
+    typeof o.sourceId === 'string' &&
+    typeof o.targetId === 'string' &&
+    typeof o.type === 'string'
   );
 }
 
-export function isGenogramDocument(obj: any): obj is GenogramDocument {
+export function isGenogramDocument(obj: unknown): obj is GenogramDocument {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as any;
   return (
-    obj &&
-    typeof obj === 'object' &&
-    Array.isArray(obj.people) &&
-    Array.isArray(obj.relations) &&
-    Array.isArray(obj.profiles) &&
-    typeof obj.id === 'string' &&
-    typeof obj.title === 'string'
+    Array.isArray(o.people) &&
+    Array.isArray(o.relations) &&
+    typeof o.id === 'string' &&
+    typeof o.title === 'string'
+  );
+}
+
+export function isFirestoreTestResult(obj: unknown): obj is FirestoreTestResult {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as any;
+  return (
+    typeof o.personId === 'string' &&
+    typeof o.testType === 'string' &&
+    typeof o.results === 'object'
+  );
+}
+
+export function isPersonAIAnalysis(obj: unknown): obj is PersonAIAnalysis {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as any;
+  return (
+    typeof o.personId === 'string' &&
+    Array.isArray(o.patterns) &&
+    Array.isArray(o.recommendations) &&
+    typeof o.summary === 'string'
   );
 }

@@ -15,7 +15,6 @@ import { NewGenogramModal } from './NewGenogramModal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card, CardBody } from '../ui/Card';
-import { debounce } from '../../utils/performance';
 
 const ONBOARDING_KEY = 'genogram-onboarding-completed';
 
@@ -81,12 +80,9 @@ export const DashboardContainer = React.memo(() => {
   }, [refresh]);
 
   // Debounced search handler
-  const handleSearch = useCallback(
-    debounce((query: string) => {
-      setSearchQuery(query);
-    }, 300),
-    []
-  );
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   // Handle new genogram creation
   const handleCreateGenogram = useCallback(
@@ -238,11 +234,11 @@ export const DashboardContainer = React.memo(() => {
         </motion.div>
       )}
 
-      {/* Controls - Hidden Search */}
-      <div className="space-y-4 hidden">
-        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      {/* Controls */}
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           {/* Search */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-xs">
             <Input
               type="text"
               placeholder={t.common.search}
@@ -260,12 +256,12 @@ export const DashboardContainer = React.memo(() => {
               value={sortBy}
               onChange={e => setSortBy(e.target.value as typeof sortBy)}
               disabled={loading}
-              className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm hover:border-slate-600 focus:outline-none focus:border-ocean-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm hover:border-slate-600 focus:outline-none focus:border-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-            <option value="recent">{t.dashboard.updatedAt}</option>
-            <option value="name">Name (A-Z)</option>
-            <option value="members">{t.personHub.relationships}</option>
-          </select>
+              <option value="recent">{t.dashboard.updatedAt}</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="members">{t.personHub.relationships}</option>
+            </select>
           </div>
 
           {/* Buttons */}
@@ -285,7 +281,7 @@ export const DashboardContainer = React.memo(() => {
                 setNewGenogramModalOpen(true);
               }}
               disabled={loading}
-              className="px-4"
+              className="px-4 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
             >
               <Plus className="w-4 h-4 mr-2" />
               {t.dashboard.createNew}

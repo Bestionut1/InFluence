@@ -138,24 +138,33 @@ export function useGenograms(): UseGenogramsReturn {
               idbGenograms.map((g: any) => ({ id: g.id, title: g.title, people: g.people?.length || 0 })));
             
             // Convert IndexedDB records to GenogramDocument format
-            const genograms: GenogramDocument[] = idbGenograms.map((record: any) => ({
-              id: record.id,
-              userId: record.userId || 'local',
-              title: record.title || 'Untitled Genogram',
-              description: record.description || '',
-              people: record.people || [],
-              relations: record.relations || [],
-              profiles: record.profiles || [],
-              createdAt: record.createdAt ? new Date(record.createdAt) : new Date(0),
-              updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
-              isPublic: record.isPublic || false,
-              sharedWith: record.sharedWith || [],
-            }));
+            const genograms = idbGenograms.map((record: any) => {
+              const createdAt = record.createdAt 
+                ? (typeof record.createdAt === 'string' ? new Date(record.createdAt) : record.createdAt)
+                : new Date(0);
+              const updatedAt = record.updatedAt
+                ? (typeof record.updatedAt === 'string' ? new Date(record.updatedAt) : record.updatedAt)
+                : new Date();
+              
+              return {
+                id: record.id,
+                userId: record.userId || 'local',
+                title: record.title || 'Untitled Genogram',
+                description: record.description || '',
+                people: record.people || [],
+                relations: record.relations || [],
+                profiles: record.profiles || [],
+                createdAt,
+                updatedAt,
+                isPublic: record.isPublic || false,
+                sharedWith: record.sharedWith || [],
+              };
+            });
             
             // Sort by updatedAt (newest first)
             genograms.sort((a, b) => {
-              const aTime = new Date(a.updatedAt).getTime();
-              const bTime = new Date(b.updatedAt).getTime();
+              const aTime = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0;
+              const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0;
               return bTime - aTime;
             });
             
@@ -252,19 +261,28 @@ export function useGenograms(): UseGenogramsReturn {
           console.log('✅ Refresh complete:', idbGenograms.length, 'genograms from IndexedDB');
           
           // Convert to GenogramDocument format
-          const genograms: GenogramDocument[] = idbGenograms.map((record: any) => ({
-            id: record.id,
-            userId: record.userId || 'local',
-            title: record.title || 'Untitled Genogram',
-            description: record.description || '',
-            people: record.people || [],
-            relations: record.relations || [],
-            profiles: record.profiles || [],
-            createdAt: record.createdAt ? new Date(record.createdAt) : new Date(0),
-            updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date(),
-            isPublic: record.isPublic || false,
-            sharedWith: record.sharedWith || [],
-          }));
+          const genograms = idbGenograms.map((record: any) => {
+            const createdAt = record.createdAt 
+              ? (typeof record.createdAt === 'string' ? new Date(record.createdAt) : record.createdAt)
+              : new Date(0);
+            const updatedAt = record.updatedAt
+              ? (typeof record.updatedAt === 'string' ? new Date(record.updatedAt) : record.updatedAt)
+              : new Date();
+              
+            return {
+              id: record.id,
+              userId: record.userId || 'local',
+              title: record.title || 'Untitled Genogram',
+              description: record.description || '',
+              people: record.people || [],
+              relations: record.relations || [],
+              profiles: record.profiles || [],
+              createdAt,
+              updatedAt,
+              isPublic: record.isPublic || false,
+              sharedWith: record.sharedWith || [],
+            };
+          });
           
           // Deduplicate by ID (keep only the most recent version)
           const uniqueGenograms = Array.from(
@@ -273,8 +291,8 @@ export function useGenograms(): UseGenogramsReturn {
           
           // Sort by updatedAt (newest first)
           uniqueGenograms.sort((a, b) => {
-            const aTime = new Date(a.updatedAt).getTime();
-            const bTime = new Date(b.updatedAt).getTime();
+            const aTime = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0;
+            const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0;
             return bTime - aTime;
           });
           

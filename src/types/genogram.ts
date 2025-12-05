@@ -1,6 +1,8 @@
 export type Gender = 'male' | 'female' | 'non-binary' | 'unknown';
-export type Status = 'living' | 'deceased';
+export type PersonStatus = 'living' | 'deceased';
+export type Status = PersonStatus; // Alias for backward compatibility
 export type ProfileType = 'template' | 'custom';
+export type RelationQuality = 'strong' | 'moderate' | 'weak' | 'conflicted' | 'neutral';
 export type TemplateCategory = 
   | 'authoritarian-parent' 
   | 'neglectful-parent' 
@@ -134,7 +136,7 @@ export interface Relation {
   // Relationship metadata
   startDate?: string; // YYYY-MM-DD format - when relationship started
   endDate?: string; // YYYY-MM-DD format - when relationship ended (if applicable)
-  quality?: 'strong' | 'moderate' | 'weak' | 'conflicted' | 'neutral'; // Quality of relationship
+  quality?: RelationQuality; // Quality of relationship
   notes?: string; // Additional notes about the relationship
 }
 

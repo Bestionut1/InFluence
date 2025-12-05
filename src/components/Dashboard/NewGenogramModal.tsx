@@ -34,11 +34,15 @@ export const NewGenogramModal = React.memo<NewGenogramModalProps>(
       }
     }, [isOpen]);
 
-    // Clear errors when modal closes
+    // Clear errors when modal closes - moved to separate effect to avoid cascading
     useEffect(() => {
       if (!isOpen) {
-        setTitle('');
-        setLocalError(null);
+        // Reset state after modal animation completes
+        const timer = setTimeout(() => {
+          setTitle('');
+          setLocalError(null);
+        }, 300);
+        return () => clearTimeout(timer);
       }
     }, [isOpen]);
 

@@ -8,6 +8,7 @@ import { LandingPage } from './pages/LandingPage';
 // Lazy load heavy pages
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Editor = lazy(() => import('./pages/Editor').then(m => ({ default: m.Editor })));
+const ReportPage = lazy(() => import('./pages/ReportPage').then(m => ({ default: m.ReportPage })));
 const AIAnalysisPage = lazy(() => import('./pages/AIAnalysisPage').then(m => ({ default: m.AIAnalysisPage })));
 const PsychologyChatPage = lazy(() => import('./pages/PsychologyChatPage').then(m => ({ default: m.PsychologyChatPage })));
 const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
@@ -51,6 +52,7 @@ function App() {
                <Route path="/analysis/:id" element={<AIAnalysisPage />} />
                <Route path="/chat/:id" element={<PsychologyChatPage />} />
                <Route path="/person/:personId" element={<PersonHubPage />} />
+               <Route path="/report/:id" element={<ReportPage />} />
                <Route path="/admin/cleanup" element={<AdminCleanup />} />
             </Route>
           </Routes>

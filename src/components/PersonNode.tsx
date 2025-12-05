@@ -7,6 +7,7 @@ import { PersonEditModal } from './PersonEditModal';
 import { PROFILE_TEMPLATES } from '../services/profileTemplates';
 import { CONDITION_COLORS } from '../constants/conditionColors';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const PersonNode = ({ data, selected }: NodeProps<Person>) => {
   const navigate = useNavigate();
@@ -50,11 +51,14 @@ const PersonNode = ({ data, selected }: NodeProps<Person>) => {
 
   return (
     <>
-      <div 
+      <motion.div 
         className={`relative shadow-md border-2 ${bgColor} backdrop-blur-sm flex items-center justify-center cursor-pointer hover:shadow-lg transition-shadow ${data.isPrincipal ? 'ring-4 ring-yellow-400' : ''} ${selected ? 'ring-2 ring-ocean-300' : ''}`} 
         style={shapeStyle}
         onClick={handleNodeClick}
         onContextMenu={handleContextMenu}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 20 }}
       >
         {/* Vertical handles for parent-child relationships (top/bottom) */}
         <Handle type="target" position={Position.Top} className="w-3 h-3 bg-ocean-300" />
@@ -114,7 +118,7 @@ const PersonNode = ({ data, selected }: NodeProps<Person>) => {
             })}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Context Menu */}
       {showContextMenu && (

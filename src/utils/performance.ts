@@ -3,13 +3,15 @@
  * Includes debounce, throttle, and autosave helpers
  */
 
+import type { GenogramData } from '../types/genogram';
+
 /**
  * Debounce a function to prevent rapid repeated calls
  * @param func Function to debounce
  * @param wait Milliseconds to wait before calling
  * @returns Debounced function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -34,7 +36,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * @param limit Milliseconds to wait between calls
  * @returns Throttled function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -62,14 +64,14 @@ export class AutosaveBackup {
   /**
    * Save a backup of genogram data
    */
-  static saveBackup(genogramId: string, data: any): void {
+  static saveBackup(genogramId: string, data: GenogramData | Record<string, unknown>): void {
     try {
       const backupKey = `${this.BACKUP_PREFIX}${genogramId}-${Date.now()}`;
       localStorage.setItem(backupKey, JSON.stringify(data));
 
       // Cleanup old backups
       this.cleanupOldBackups(genogramId);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save autosave backup:', error);
     }
   }
@@ -77,7 +79,7 @@ export class AutosaveBackup {
   /**
    * Get the most recent backup for a genogram
    */
-  static getLatestBackup(genogramId: string): any | null {
+  static getLatestBackup(genogramId: string): GenogramData | Record<string, unknown> | null {
     try {
       let latestKey: string | null = null;
       let latestTime = 0;
@@ -150,7 +152,7 @@ export class AutosaveBackup {
       backups.slice(this.MAX_BACKUPS).forEach(backup => {
         localStorage.removeItem(backup.key);
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to cleanup old autosave backups:', error);
     }
   }
@@ -163,19 +165,19 @@ export class AutosaveBackup {
 export class DevLog {
   private static isDev = import.meta.env.DEV;
 
-  static log(section: string, message: string, data?: any) {
+  static log(section: string, message: string, data?: unknown) {
     if (this.isDev) {
       console.log(`[${section}] ${message}`, data || '');
     }
   }
 
-  static warn(section: string, message: string, data?: any) {
+  static warn(section: string, message: string, data?: unknown) {
     if (this.isDev) {
       console.warn(`[${section}] ⚠️  ${message}`, data || '');
     }
   }
 
-  static error(section: string, message: string, error?: any) {
+  static error(section: string, message: string, error?: Error | unknown) {
     if (this.isDev) {
       console.error(`[${section}] ❌ ${message}`, error || '');
     }

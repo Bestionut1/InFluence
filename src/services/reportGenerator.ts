@@ -1,4 +1,4 @@
-import type { Person, Relation, PersonProfile } from '../types/genogram';
+import type { Person, Relation } from '../types/genogram';
 
 export interface PersonStatistics {
   totalPeople: number;
@@ -48,7 +48,7 @@ export interface GenogramReport {
 /**
  * Generate comprehensive statistics for a genogram
  */
-export const generateStatistics = (people: Person[], relations: Relation[], _profiles?: PersonProfile[]): GenogramReport => {
+export const generateStatistics = (people: Person[], relations: Relation[]): GenogramReport => {
   const personStats = calculatePersonStatistics(people);
   const healthStats = calculateHealthStatistics(people);
   const relationshipStats = calculateRelationshipStatistics(people, relations);

@@ -15,6 +15,25 @@ import {
 import { db, auth } from './firebase';
 import type { GenogramData } from '../types/genogram';
 
+interface SaveQueueItem {
+  genogramId: string;
+  title: string;
+  description?: string;
+  data: GenogramData | Record<string, unknown>;
+  timestamp: number;
+  attempts: number;
+}
+
+// Type augmentation for window
+declare global {
+  interface Window {
+    __firebaseSync?: {
+      cleanup: () => void;
+      syncNow: () => Promise<void[]>;
+    };
+  }
+}
+
 export interface GenogramDocument extends GenogramData {
   id: string;
   userId: string;
@@ -65,7 +84,7 @@ async function checkRealConnectivity(): Promise<boolean> {
     
     clearTimeout(timeoutId);
     return response.status === 204;
-  } catch (error) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -595,7 +614,7 @@ export function setupOnlineOfflineSync(): void {
 
   // Export for cleanup if needed
   if (import.meta.env.DEV) {
-    (window as any).__firebaseSync = {
+    (window as Window).__firebaseSync = {
       cleanup: () => window.removeEventListener('online', handleOnline),
       syncNow: async () => Promise.all([syncPendingDeletes(), syncPendingSaves()]),
     };
@@ -608,14 +627,14 @@ export function setupOnlineOfflineSync(): void {
  * 
  * FIXED BUG #2: Previously only deletes were queued, now saves are too
  */
-export function queueSave(genogramId: string, data: any, title: string, description?: string): void {
+export function queueSave(genogramId: string, data: GenogramData | Record<string, unknown>, title: string, description?: string): void {
   try {
     const saveQueue = JSON.parse(localStorage.getItem('save-queue') || '[]');
     
     // Check if this genogram already queued
-    const existingIndex = saveQueue.findIndex((item: any) => item.genogramId === genogramId);
+    const existingIndex = saveQueue.findIndex((item: SaveQueueItem) => item.genogramId === genogramId);
     
-    const queueItem = {
+    const queueItem: SaveQueueItem = {
       genogramId,
       title,
       description,
@@ -639,7 +658,7 @@ export function queueSave(genogramId: string, data: any, title: string, descript
 
     localStorage.setItem('save-queue', JSON.stringify(saveQueue));
     console.log(`📝 Queued save for genogram: ${genogramId}`);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error queuing save:', error);
   }
 }

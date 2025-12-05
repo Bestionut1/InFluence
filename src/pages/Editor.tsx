@@ -34,7 +34,6 @@ export const Editor = () => {
     validationResult,
     people,
     relations,
-    profiles,
     error,
     clearError,
   } = useGenogramStore();
@@ -77,10 +76,10 @@ export const Editor = () => {
   // Generate report when switching to report tab or when data changes
   useEffect(() => {
     if (activeTab === 'report' && people.length > 0) {
-      const newReport = generateStatistics(people, relations, profiles);
+      const newReport = generateStatistics(people, relations);
       setReport(newReport);
     }
-  }, [activeTab, people, relations, profiles]);
+  }, [activeTab, people, relations]);
 
   const handleCanvasClick = () => {
     setIsSidebarCollapsed(true);
@@ -120,6 +119,10 @@ export const Editor = () => {
 
   const handleAIAnalysis = () => {
     navigate(`/analysis/${id}`);
+  };
+
+  const handleOpenReport = () => {
+    navigate(`/report/${id}`);
   };
 
   return (
@@ -163,6 +166,14 @@ export const Editor = () => {
               onClick={handleAIAnalysis}
             >
               <span className="hidden sm:inline">{t.editor.analyze}</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<BarChart3 className="w-4 h-4" />}
+              onClick={handleOpenReport}
+            >
+              <span className="hidden sm:inline">Report</span>
             </Button>
             <Button
               variant="secondary"

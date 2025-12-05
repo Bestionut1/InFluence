@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Person, Relation, GenogramData, PersonProfile, RelationType, HealthRecord, MedicationRecord } from '../types/genogram';
+import type { Timestamp } from 'firebase/firestore';
 import * as indexedDbService from '../services/indexedDbService';
 import { devLog, devWarn, devError } from '../utils/errors';
 import { 
@@ -20,8 +21,8 @@ export interface GenogramDocument extends GenogramData {
   userId: string;
   title: string;
   description?: string;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Date | Timestamp;
+  updatedAt: Date | Timestamp;
   isPublic: boolean;
   sharedWith: string[];
 }
@@ -166,8 +167,7 @@ export const useGenogramStore = create<GenogramState>()(
             const alignedPositions = applyPartnerAlignment(
               relation.sourceId,
               relation.targetId,
-              updatedPeople,
-              updatedRelations
+              updatedPeople
             );
             
             // Update people with new positions
@@ -358,7 +358,10 @@ export const useGenogramStore = create<GenogramState>()(
           }));
 
           // Sort by updatedAt descending (most recent first)
-          genogramDocuments.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          const getTimeValue = (date: Date | Timestamp): number => {
+            return date instanceof Date ? date.getTime() : (date as any).toMillis?.() ?? 0;
+          };
+          genogramDocuments.sort((a, b) => getTimeValue(b.updatedAt) - getTimeValue(a.updatedAt));
 
           set({ 
             allGenograms: genogramDocuments, 

@@ -291,7 +291,7 @@ export function applySiblingAlignment(
  * @returns Map of updated positions (personId -> {x, y})
  */
 export function applyPartnerAlignment(
-personId1: string, personId2: string, people: Person[], _updatedRelations?: Relation[]): Map<string, { x: number; y: number }> {
+personId1: string, personId2: string, people: Person[]): Map<string, { x: number; y: number }> {
   const person1 = people.find(p => p.id === personId1);
   const person2 = people.find(p => p.id === personId2);
   

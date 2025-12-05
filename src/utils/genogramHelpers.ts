@@ -3,7 +3,8 @@
  * Reduces repeated logic and improves maintainability
  */
 
-import type { Person, Relation, GenogramData } from '../types/models';
+import type { Person, Relation } from '../types/models';
+import type { Gender, PersonStatus, RelationType, GenogramData } from '../types/genogram';
 
 // Generate a simple unique ID
 function generateId(): string {
@@ -13,12 +14,15 @@ function generateId(): string {
 /**
  * Create a new person with default values
  */
-export function createNewPerson(name: string, gender: string, status: string = 'living'): Person {
+export function createNewPerson(name: string, gender: string | Gender, status: string | PersonStatus = 'living'): Person {
+  const validGenders: Gender[] = ['male', 'female', 'non-binary', 'unknown'];
+  const validStatuses: PersonStatus[] = ['living', 'deceased'];
+  
   return {
     id: generateId(),
     name,
-    gender: gender as any,
-    status: status as any,
+    gender: (validGenders.includes(gender as Gender) ? gender : 'unknown') as Gender,
+    status: (validStatuses.includes(status as PersonStatus) ? status : 'living') as PersonStatus,
     isPrincipal: false,
     position: { x: 0, y: 0 },
   };
@@ -27,12 +31,12 @@ export function createNewPerson(name: string, gender: string, status: string = '
 /**
  * Create a new relation between two people
  */
-export function createNewRelation(sourceId: string, targetId: string, type: string): Relation {
+export function createNewRelation(sourceId: string, targetId: string, type: string | RelationType): Relation {
   return {
     id: generateId(),
     sourceId,
     targetId,
-    type: type as any,
+    type: type as RelationType,
   };
 }
 
@@ -83,7 +87,7 @@ export function findParents(people: Person[], relations: Relation[], childId: st
 export function findPartner(people: Person[], relations: Relation[], personId: string): Person | undefined {
   const partnerRelation = relations.find(
     r => (r.sourceId === personId || r.targetId === personId) && 
-    (r.type === 'partner' || r.type === 'ex-partner' || r.type === 'divorced')
+    (r.type === 'partner' || r.type === 'ex-partner' || r.type === 'married-couple' || r.type === 'domestic-partnership')
   );
   
   if (!partnerRelation) return undefined;
@@ -138,12 +142,12 @@ export function calculateGenogramStats(data: GenogramData) {
 
   return {
     totalPeople: people.length,
-    livingPeople: people.filter(p => p.status === 'living').length,
-    deceasedPeople: people.filter(p => p.status === 'deceased').length,
+    livingPeople: people.filter((p: Person) => p.status === 'living').length,
+    deceasedPeople: people.filter((p: Person) => p.status === 'deceased').length,
     totalRelations: relations.length,
-    maleCount: people.filter(p => p.gender === 'male').length,
-    femaleCount: people.filter(p => p.gender === 'female').length,
-    generations: Math.max(0, ...people.map((p) => {
+    maleCount: people.filter((p: Person) => p.gender === 'male').length,
+    femaleCount: people.filter((p: Person) => p.gender === 'female').length,
+    generations: Math.max(0, ...people.map((p: Person) => {
       if (people.length === 0) return 0;
       return getGenerationalLevel(people, relations, p.id);
     })) + 1,
@@ -212,8 +216,8 @@ export function exportToJSON(data: GenogramData, title: string): string {
  */
 export function cloneGenogramData(data: GenogramData): GenogramData {
   return {
-    people: data.people.map(p => ({ ...p })),
-    relations: data.relations.map(r => ({ ...r })),
-    profiles: data.profiles.map(p => ({ ...p })),
+    people: data.people.map((p: Person) => ({ ...p })),
+    relations: data.relations.map((r: Relation) => ({ ...r })),
+    profiles: data.profiles?.map((p) => ({ ...p })) || [],
   };
 }

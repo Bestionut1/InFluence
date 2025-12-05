@@ -3,7 +3,8 @@ import { useGenogramStore } from '../store/genogramStore';
 import { AnimatedModal } from '../components/ui/AnimatedModal';
 import { AnimatedButton } from '../components/ui/AnimatedButton';
 import { useTranslation } from '../hooks/useTranslation';
-import type { Person } from '../types/genogram';
+import { generateShortId } from '../utils/uuid';
+import type { Person, Gender, PersonStatus } from '../types/genogram';
 
 export const AddPersonModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const t = useTranslation();
@@ -25,11 +26,11 @@ export const AddPersonModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: 
     setIsSubmitting(true);
     try {
       addPerson({
-        id: Math.random().toString(36).substr(2, 9),
+        id: generateShortId(),
         name: formData.name,
         age: formData.age,
-        gender: formData.gender as any,
-        status: formData.status as any,
+        gender: (formData.gender || 'unknown') as Gender,
+        status: (formData.status || 'living') as PersonStatus,
         attributes: formData.attributes || [],
         isPrincipal: formData.isPrincipal || false,
       });
@@ -82,7 +83,7 @@ export const AddPersonModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: 
               id="gender-select"
               className="w-full bg-deep border border-ocean-800 rounded-lg p-3 text-white focus:border-ocean-500 outline-none input-focus-glow transition-colors"
               value={formData.gender || 'unknown'}
-              onChange={e => setFormData({...formData, gender: e.target.value as any})}
+              onChange={e => setFormData({...formData, gender: e.target.value as Gender})}
               disabled={isSubmitting}
             >
               <option value="male">{t.editor.male}</option>
@@ -101,7 +102,7 @@ export const AddPersonModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: 
               id="status-select"
               className="w-full bg-deep border border-ocean-800 rounded-lg p-3 text-white focus:border-ocean-500 outline-none input-focus-glow transition-colors"
               value={formData.status || 'living'}
-              onChange={e => setFormData({...formData, status: e.target.value as any})}
+              onChange={e => setFormData({...formData, status: e.target.value as PersonStatus})}
               disabled={isSubmitting}
             >
               <option value="living">{t.editor.living}</option>

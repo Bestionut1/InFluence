@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -158,7 +158,7 @@ const FallingStar = ({ delay, startTop, startLeft }: { delay: number; startTop: 
         duration: 4.5,
         delay,
         repeat: Infinity,
-        repeatDelay: 3 + Math.random() * 4,
+        repeatDelay: useMemo(() => 3 + Math.random() * 4, []),
         ease: 'easeIn',
       }}
     >
@@ -190,7 +190,7 @@ const SpecialFallingStar = ({ delay, startTop, startLeft }: { delay: number; sta
         duration: 3,
         delay,
         repeat: Infinity,
-        repeatDelay: 6 + Math.random() * 4,
+        repeatDelay: useMemo(() => 6 + Math.random() * 4, []),
         ease: 'easeIn',
       }}
     >
@@ -233,25 +233,31 @@ const StarfieldBackground = () => {
 
       {/* Twinkling background stars - reduced from 20 to 12 */}
       <div className="absolute inset-0">
-        {Array.from({ length: 12 }, (_, i) => (
-          <motion.div
-            key={`twinkle-${i}`}
-            className="absolute w-0.5 h-0.5 bg-white rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              willChange: 'opacity',
-            }}
-            animate={{
-              opacity: [0.15, 0.6, 0.15],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 2,
-              delay: Math.random() * 6,
-              repeat: Infinity,
-            }}
-          />
-        ))}
+        {Array.from({ length: 12 }, (_, i) => {
+          const left = useMemo(() => Math.random() * 100, []);
+          const top = useMemo(() => Math.random() * 100, []);
+          const duration = useMemo(() => 4 + Math.random() * 2, []);
+          const delay = useMemo(() => Math.random() * 6, []);
+          return (
+            <motion.div
+              key={`twinkle-${i}`}
+              className="absolute w-0.5 h-0.5 bg-white rounded-full"
+              style={{
+                left: `${left}%`,
+                top: `${top}%`,
+                willChange: 'opacity',
+              }}
+              animate={{
+                opacity: [0.15, 0.6, 0.15],
+              }}
+              transition={{
+                duration: duration,
+                delay: delay,
+                repeat: Infinity,
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );

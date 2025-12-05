@@ -5,6 +5,7 @@ import { GoogleGenAI } from '@google/genai';
 import { AppHeader } from '../components/layout/AppHeader';
 import { createPsychologySystemPrompt, assistantSettings } from '../services/aiChat';
 import { extractRelationshipsFromChat, resolveExtractedRelationships } from '../services/relationshipExtractor';
+import { chatDB } from '../services/chatDB';
 import type { ChatSession } from '../components/chat/ChatSidebar';
 import { ChatMessage } from '../components/chat/ChatMessage';
 import { StreamRenderer, TypingIndicator } from '../components/chat/TypingIndicator';
@@ -34,37 +35,50 @@ export const PsychologyChatPage = () => {
   const genogramData = { people, relations };
   const shouldAutoScrollRef = useRef(true);
 
-  // Initialize AI
+  // Initialize AI and load chat data from IndexedDB
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (apiKey) {
-      aiRef.current = new GoogleGenAI({ apiKey });
-      systemPromptRef.current = createPsychologySystemPrompt(genogramData);
-    }
-
-    // Load sessions from localStorage
-    const savedSessions = localStorage.getItem('chat_sessions');
-    if (savedSessions) {
-      try {
-        const parsed = JSON.parse(savedSessions).map((s: any) => ({
-          ...s,
-          createdAt: new Date(s.createdAt),
-        }));
-        setSessions(parsed);
-      } catch (e) {
-        console.error('Failed to load sessions:', e);
+    const initializeChat = async () => {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (apiKey) {
+        aiRef.current = new GoogleGenAI({ apiKey });
+        systemPromptRef.current = createPsychologySystemPrompt(genogramData);
       }
-    }
 
-    // Initialize with welcome message
-    const welcomeMessage: ChatMessageType = {
-      id: '1',
-      role: 'assistant',
-      content: t.chat.welcomeMessage,
-      timestamp: new Date(),
+      // Load sessions from IndexedDB
+      try {
+        await chatDB.init();
+        const savedSessions = await chatDB.getSessions();
+        const sessionsWithDates: ChatSession[] = savedSessions.map((s: unknown) => {
+          const session = s as Record<string, unknown>;
+          const createdAtValue = typeof session.createdAt === 'string' 
+            ? new Date(session.createdAt as string) 
+            : session.createdAt instanceof Date 
+            ? session.createdAt 
+            : new Date();
+          return {
+            id: String(session.id || ''),
+            title: String(session.title || ''),
+            createdAt: createdAtValue,
+            personId: session.personId ? String(session.personId) : undefined,
+          } as ChatSession;
+        });
+        setSessions(sessionsWithDates);
+      } catch (e) {
+        console.error('Failed to load sessions from IndexedDB:', e);
+      }
+
+      // Initialize with welcome message
+      const welcomeMessage: ChatMessageType = {
+        id: '1',
+        role: 'assistant',
+        content: t.chat.welcomeMessage,
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
     };
-    setMessages([welcomeMessage]);
-  }, []);
+
+    initializeChat();
+  }, [t]);
 
   // Auto-scroll only when new assistant messages arrive (not on user input)
   useEffect(() => {
@@ -79,7 +93,7 @@ export const PsychologyChatPage = () => {
   }, [messages, streaming, streamingText]);
 
   // Create new chat
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = useCallback(async () => {
     const newSession: ChatSession = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -101,27 +115,37 @@ export const PsychologyChatPage = () => {
     };
     setMessages([welcomeMessage]);
 
-    // Save to localStorage
-    localStorage.setItem('chat_sessions', JSON.stringify([newSession, ...sessions]));
-  }, [sessions]);
+    // Save to IndexedDB
+    try {
+      await chatDB.saveSessions([newSession, ...sessions]);
+    } catch (e) {
+      console.error('Failed to save session:', e);
+    }
+  }, [sessions, t]);
 
   // Select existing chat
-  const handleSelectSession = useCallback((sessionId: string) => {
+  const handleSelectSession = useCallback(async (sessionId: string) => {
     setActiveSessionId(sessionId);
-    // Load messages from localStorage for this session
-    const savedMessages = localStorage.getItem(`chat_messages_${sessionId}`);
-    if (savedMessages) {
-      try {
-        const parsed = JSON.parse(savedMessages).map((m: any) => ({
-          ...m,
-          timestamp: new Date(m.timestamp),
-        }));
-        setMessages(parsed);
-      } catch (e) {
-        console.error('Failed to load messages:', e);
-        setMessages([]);
-      }
-    } else {
+    // Load messages from IndexedDB for this session
+    try {
+      const messages = await chatDB.getMessages(sessionId);
+      const messagesWithDates: ChatMessageType[] = messages.map((m: unknown) => {
+        const msg = m as Record<string, unknown>;
+        const timestampValue = typeof msg.timestamp === 'string'
+          ? new Date(msg.timestamp as string)
+          : msg.timestamp instanceof Date
+          ? msg.timestamp
+          : new Date();
+        return {
+          id: String(msg.id || ''),
+          role: (msg.role as 'user' | 'assistant' | 'system') || 'user',
+          content: String(msg.content || ''),
+          timestamp: timestampValue,
+        } as ChatMessageType;
+      });
+      setMessages(messagesWithDates);
+    } catch (e) {
+      console.error('Failed to load messages:', e);
       setMessages([]);
     }
     setStreamingText('');
@@ -130,10 +154,17 @@ export const PsychologyChatPage = () => {
 
   // Delete session
   const handleDeleteSession = useCallback(
-    (sessionId: string) => {
+    async (sessionId: string) => {
       const updated = sessions.filter(s => s.id !== sessionId);
       setSessions(updated);
-      localStorage.setItem('chat_sessions', JSON.stringify(updated));
+      
+      // Delete from IndexedDB
+      try {
+        await chatDB.deleteSession(sessionId);
+        await chatDB.deleteSessionMessages(sessionId);
+      } catch (e) {
+        console.error('Failed to delete session:', e);
+      }
 
       if (activeSessionId === sessionId) {
         handleNewChat();
@@ -241,23 +272,43 @@ ${conversationHistory ? `CONVERSATION:\n${conversationHistory}\n\n` : ''}User: $
       const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
       
-      // Save messages to localStorage for this session
+      // Save messages to IndexedDB for this session
       if (activeSessionId) {
-        localStorage.setItem(`chat_messages_${activeSessionId}`, JSON.stringify(finalMessages));
-        
-        // Update session title from first user message if title is still "New Chat"
-        setSessions(prevSessions => {
-          const updated = prevSessions.map(session => {
-            if (session.id === activeSessionId && session.title === 'New Chat') {
-              const newTitle = userInput.substring(0, 40) + (userInput.length > 40 ? '...' : '');
-              return { ...session, title: newTitle };
-            }
-            return session;
+        try {
+          // Save user message
+          await chatDB.saveMessage({
+            id: userMessage.id,
+            sessionId: activeSessionId,
+            role: userMessage.role,
+            content: userMessage.content,
+            timestamp: userMessage.timestamp.toISOString(),
           });
-          // Save updated sessions
-          localStorage.setItem('chat_sessions', JSON.stringify(updated));
-          return updated;
-        });
+          
+          // Save assistant message
+          await chatDB.saveMessage({
+            id: assistantMessage.id,
+            sessionId: activeSessionId,
+            role: assistantMessage.role,
+            content: assistantMessage.content,
+            timestamp: assistantMessage.timestamp.toISOString(),
+          });
+          
+          // Update session title from first user message if title is still "New Chat"
+          setSessions(prevSessions => {
+            const updated = prevSessions.map(session => {
+              if (session.id === activeSessionId && session.title === 'New Chat') {
+                const newTitle = userInput.substring(0, 40) + (userInput.length > 40 ? '...' : '');
+                return { ...session, title: newTitle, updatedAt: new Date() };
+              }
+              return session;
+            });
+            // Save updated sessions to IndexedDB
+            chatDB.saveSessions(updated).catch(e => console.error('Failed to update sessions:', e));
+            return updated;
+          });
+        } catch (e) {
+          console.error('Failed to save messages to IndexedDB:', e);
+        }
       }
 
       // Re-enable auto-scroll after response is complete

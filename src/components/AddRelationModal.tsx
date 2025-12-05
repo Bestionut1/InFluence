@@ -3,6 +3,8 @@ import { useGenogramStore } from '../store/genogramStore';
 import { AnimatedModal } from '../components/ui/AnimatedModal';
 import { AnimatedButton } from '../components/ui/AnimatedButton';
 import { useTranslation } from '../hooks/useTranslation';
+import { generateShortId } from '../utils/uuid';
+import type { RelationType, RelationQuality } from '../types/genogram';
 
 export const AddRelationModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const t = useTranslation();
@@ -66,11 +68,11 @@ export const AddRelationModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
     setIsSubmitting(true);
     try {
       addRelation({
-        id: Math.random().toString(36).substr(2, 9),
+        id: generateShortId(),
         sourceId,
         targetId,
-        type: type as any,
-        quality: quality,
+        type: type as RelationType,
+        quality: quality as RelationQuality,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         notes: notes || undefined,
@@ -155,7 +157,7 @@ export const AddRelationModal = ({ isOpen, onClose }: { isOpen: boolean; onClose
               id="quality-select"
               className="w-full bg-deep border border-ocean-800 rounded p-2 text-white focus:border-ocean-500 outline-none transition-colors"
               value={quality}
-              onChange={e => setQuality(e.target.value as any)}
+              onChange={e => setQuality(e.target.value as RelationQuality)}
               disabled={isSubmitting}
             >
               <option value="neutral">Neutral</option>
