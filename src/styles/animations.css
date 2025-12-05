@@ -1,0 +1,311 @@
+/* ===================================
+   SMOOTH TRANSITIONS & ANIMATIONS
+   =================================== */
+
+/* Button Animations */
+@keyframes buttonHover {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes buttonPress {
+  0% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(0.95);
+  }
+}
+
+/* Card Lift Effect */
+@keyframes cardLift {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  }
+  100% {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Modal Animations */
+@keyframes modalFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Input Focus Glow */
+@keyframes inputGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0);
+  }
+}
+
+/* Fade In */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Fade Out */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Slide Up */
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide Down */
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale In */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bounce */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Spinning Loader */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Shimmer Loading Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Icon Rotate */
+@keyframes iconRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Smooth Color Transition */
+@keyframes colorShift {
+  0% {
+    color: inherit;
+  }
+  50% {
+    color: #f59e0b;
+  }
+  100% {
+    color: inherit;
+  }
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+
+.btn-hover {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-hover:hover {
+  animation: buttonHover 0.2s ease-out forwards;
+  box-shadow: 0 15px 40px rgba(217, 119, 6, 0.4) !important;
+}
+
+.btn-hover:active {
+  animation: buttonPress 0.1s ease-out forwards;
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-hover:hover {
+  animation: cardLift 0.3s ease-out forwards;
+}
+
+.modal-backdrop {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.input-focus {
+  transition: all 0.3s ease-out;
+}
+
+.input-focus:focus {
+  animation: inputGlow 0.6s ease-out;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slide-down {
+  animation: slideDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bounce-animation {
+  animation: bounce 1s infinite;
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+.pulse-animation {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.shimmer-animation {
+  background: linear-gradient(
+    90deg,
+    #f5f5f3 25%,
+    #fafaf8 50%,
+    #f5f5f3 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.icon-rotate {
+  animation: iconRotate 0.6s ease-out;
+}
+
+/* ===================================
+   SMOOTH TRANSITIONS DEFAULTS
+   =================================== */
+
+button,
+a,
+input,
+textarea,
+select {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease,
+    box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+/* ===================================
+   SCROLL BEHAVIOR
+   =================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ===================================
+   SMOOTH TRANSITIONS FOR TAILWIND
+   =================================== */
+
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.transition-smooth-fast {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.transition-smooth-slow {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
