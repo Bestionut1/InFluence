@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGenogramStore } from '../store/genogramStore';
 import { useLanguage } from '../hooks/useTranslation';
+import { useTranslation } from '../hooks/useTranslation';
 import { Loader, Download, RefreshCw, AlertTriangle, TrendingUp, Lightbulb, Shield, ArrowLeft, BarChart3, Brain } from 'lucide-react';
 import { analyzeGenogramWithGemini } from '../services/geminiAi';
 import { AppHeader } from '../components/layout/AppHeader';
@@ -15,6 +16,7 @@ export const AIAnalysisPage = () => {
   const navigate = useNavigate();
   const { people, relations } = useGenogramStore();
   const { language } = useLanguage();
+  const t = useTranslation();
   
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export const AIAnalysisPage = () => {
     
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const result = await analyzeGenogramWithGemini(genogramData, apiKey);
+      const result = await analyzeGenogramWithGemini(genogramData, apiKey, language);
       setAnalysis(result);
     } catch (err) {
       setError('Failed to analyze genogram. Please try again.');
@@ -103,7 +105,7 @@ export const AIAnalysisPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                 <Brain className="w-8 h-8 text-indigo-400" />
-                Genogram AI Analysis
+                {t.analysis.title}
               </h1>
               <p className="text-slate-400 text-sm mt-1">Powered by Generative AI - Family Pattern Recognition & Insights</p>
             </div>
@@ -159,12 +161,12 @@ export const AIAnalysisPage = () => {
             {loading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Analyzing Family Patterns...
+                {t.analysis.generating}
               </>
             ) : (
               <>
                 <RefreshCw className="w-5 h-5" />
-                Analyze Genogram with AI
+                {t.aiAnalysis?.analyzeButton || 'Analyze Genogram with AI'}
               </>
             )}
           </AnimatedButton>
@@ -183,9 +185,9 @@ export const AIAnalysisPage = () => {
           >
             {/* Report Header */}
             <div className="border-b-2 border-gray-300 pb-6">
-              <h2 className="text-2xl font-bold mb-2">Genogram Analysis Report</h2>
-              <p className="text-gray-600 text-sm">Generated: {new Date().toLocaleDateString()}</p>
-              <p className="text-gray-600 text-sm">Family Members Analyzed: {people.length} | Relationships: {relations.length}</p>
+              <h2 className="text-2xl font-bold mb-2">{t.analysis.pdfTitle}</h2>
+              <p className="text-gray-600 text-sm">{t.analysis.pdfGenerated}: {new Date().toLocaleDateString(language === 'ro' ? 'ro-RO' : 'en-US')}</p>
+              <p className="text-gray-600 text-sm">{language === 'ro' ? 'Membri Familie Analiza' : 'Family Members'} {language === 'ro' ? 'Analizați' : 'Analyzed'}: {people.length} | {language === 'ro' ? 'Relații' : 'Relationships'}: {relations.length}</p>
             </div>
 
             {/* Summary Section */}
@@ -198,7 +200,7 @@ export const AIAnalysisPage = () => {
               <div className="flex items-start gap-3">
                 <Brain className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Executive Summary</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{language === 'ro' ? 'Rezumat Executiv' : 'Executive Summary'}</h3>
                   <p className="text-gray-700 leading-relaxed">{analysis.summary}</p>
                 </div>
               </div>
@@ -213,7 +215,7 @@ export const AIAnalysisPage = () => {
             >
               <div className="flex items-start gap-3 mb-4">
                 <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                <h3 className="text-lg font-bold text-gray-900">Family Patterns Identified</h3>
+                <h3 className="text-lg font-bold text-gray-900">{t.analysis.patterns}</h3>
               </div>
               <div className="space-y-3 ml-9">
                 {analysis.patterns.map((pattern, i) => (
@@ -234,7 +236,7 @@ export const AIAnalysisPage = () => {
             >
               <div className="flex items-start gap-3 mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-                <h3 className="text-lg font-bold text-gray-900">Potential Trauma & Cycles</h3>
+                <h3 className="text-lg font-bold text-gray-900">{language === 'ro' ? 'Potențial Traumă & Cicluri' : 'Potential Trauma & Cycles'}</h3>
               </div>
               <div className="space-y-3 ml-9">
                 {analysis.traumas.map((trauma, i) => (
@@ -255,7 +257,7 @@ export const AIAnalysisPage = () => {
             >
               <div className="flex items-start gap-3 mb-4">
                 <Lightbulb className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                <h3 className="text-lg font-bold text-gray-900">Therapeutic Recommendations</h3>
+                <h3 className="text-lg font-bold text-gray-900">{t.analysis.recommendations}</h3>
               </div>
               <div className="space-y-3 ml-9">
                 {analysis.recommendations.map((rec, i) => (
@@ -276,7 +278,7 @@ export const AIAnalysisPage = () => {
             >
               <div className="flex items-start gap-3 mb-4">
                 <Shield className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
-                <h3 className="text-lg font-bold text-gray-900">Clinical Insights & Risk Factors</h3>
+                <h3 className="text-lg font-bold text-gray-900">{language === 'ro' ? 'Perspective Clinice & Factori de Risc' : 'Clinical Insights & Risk Factors'}</h3>
               </div>
               <p className="text-gray-700 leading-relaxed ml-9">
                 Based on the family structure and reported conditions, consider evaluating resilience factors, protective relationships, and intergenerational healing opportunities. Early intervention in identified trauma cycles can significantly improve outcomes.
@@ -291,7 +293,7 @@ export const AIAnalysisPage = () => {
               className="bg-yellow-50 border border-yellow-300 p-6 rounded"
             >
               <p className="text-yellow-900 text-sm leading-relaxed">
-                <span className="font-bold">⚠️ Important Disclaimer:</span> {analysis.disclaimer}
+                <span className="font-bold">{t.analysis.pdfDisclaimer}:</span> {analysis.disclaimer || t.analysis.pdfDisclaimerText}
               </p>
             </motion.div>
           </motion.div>
@@ -305,8 +307,8 @@ export const AIAnalysisPage = () => {
             className="text-center py-16"
           >
             <BarChart3 className="w-16 h-16 text-slate-500 mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold text-slate-300 mb-2">No Analysis Yet</h3>
-            <p className="text-slate-400">Click "Analyze Genogram with AI" to generate family pattern insights</p>
+            <h3 className="text-xl font-semibold text-slate-300 mb-2">{t.analysis.noAnalysis}</h3>
+            <p className="text-slate-400">{language === 'ro' ? 'Click "Analizează Genograma cu AI" pentru a genera perspectivele modelelor familiale' : 'Click "Analyze Genogram with AI" to generate family pattern insights'}</p>
           </motion.div>
         )}
 
@@ -325,7 +327,7 @@ export const AIAnalysisPage = () => {
               className="flex-1"
             >
               <Download className="w-5 h-5" />
-              {isGeneratingPDF ? 'Generating PDF...' : 'Download Report as PDF'}
+              {isGeneratingPDF ? t.analysis.pdfGeneratingError?.replace('Error', 'Generating') : t.analysis.downloadPDF}
             </AnimatedButton>
             <AnimatedButton
               onClick={() => window.print()}
@@ -333,7 +335,7 @@ export const AIAnalysisPage = () => {
               className="flex-1"
             >
               <BarChart3 className="w-5 h-5" />
-              Print Report
+              {language === 'ro' ? 'Tipărire Raport' : 'Print Report'}
             </AnimatedButton>
           </motion.div>
         )}

@@ -9,8 +9,16 @@ export interface AnalysisResult {
   disclaimer: string;
 }
 
-export const generateGeminiPrompt = (data: GenogramData) => {
-  let prompt = `You are a professional psychologist specialized in family systems theory and DSM-5-TR patterns. 
+export const generateGeminiPrompt = (data: GenogramData, language: 'en' | 'ro' = 'en') => {
+  const isRomanian = language === 'ro';
+  
+  let prompt = isRomanian 
+    ? `Ești un psiholog profesionist specializat în teoria sistemelor familiale și modelele DSM-5-TR. 
+Analizează următoarele date genograma familială și oferă o analiză psihologică cuprinzătoare.
+
+MEMBRI FAMILIEI:
+`
+    : `You are a professional psychologist specialized in family systems theory and DSM-5-TR patterns. 
 Analyze the following family genogram data and provide a comprehensive psychological analysis.
 
 FAMILY MEMBERS:
@@ -35,7 +43,27 @@ FAMILY MEMBERS:
     prompt += `- ${source} <--${r.type}--> ${target}\n`;
   });
 
-  prompt += `
+  if (isRomanian) {
+    prompt += `
+CERINȚE DE ANALIZĂ:
+1. Identifică modelele familiale (triangulare, rupturi, încrețire, granițe fuzionate, modele rigide)
+2. Detectează potențialul traumă intergenerațională sau cicluri
+3. Analizează calitatea relației și stilurile de atașament
+4. Identifică zonele de conflict și sursele de tensiune
+5. Sugerează intervenții terapeutice
+
+FORMAT RĂSPUNS (returnează doar JSON valid):
+{
+  "patterns": ["model 1", "model 2"],
+  "traumas": ["traumă/problemă 1", "traumă/problemă 2"],
+  "recommendations": ["recomandare 1", "recomandare 2"],
+  "summary": "Rezumat clinic scurt",
+  "disclaimer": "IMPORTANT: Aceasta este o analiză generată de AI doar în scopuri educaționale și NU este un diagnostic clinic. Un terapeut autorizat ar trebui să efectueze o evaluare adecvată."
+}
+
+Returnează DOAR JSON valid, fără markdown sau text suplimentar.`;
+  } else {
+    prompt += `
 ANALYSIS REQUIREMENTS:
 1. Identify family patterns (triangulation, cut-offs, enmeshment, fused boundaries, rigid patterns)
 2. Detect potential intergenerational trauma or cycles
@@ -53,18 +81,19 @@ RESPONSE FORMAT (return as valid JSON only):
 }
 
 Return ONLY valid JSON, no markdown or additional text.`;
+  }
 
   return prompt;
 };
 
-export const analyzeGenogramWithGemini = async (data: GenogramData, apiKey?: string): Promise<AnalysisResult> => {
+export const analyzeGenogramWithGemini = async (data: GenogramData, apiKey?: string, language: 'en' | 'ro' = 'en'): Promise<AnalysisResult> => {
   if (!apiKey) {
-    return mockAnalysis();
+    return mockAnalysis(language);
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const prompt = generateGeminiPrompt(data);
+    const prompt = generateGeminiPrompt(data, language);
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -74,7 +103,7 @@ export const analyzeGenogramWithGemini = async (data: GenogramData, apiKey?: str
     const content = response.text;
 
     if (!content) {
-      return mockAnalysis();
+      return mockAnalysis(language);
     }
 
     // Parse JSON response
@@ -84,15 +113,41 @@ export const analyzeGenogramWithGemini = async (data: GenogramData, apiKey?: str
       return analysis;
     } catch (parseError) {
       console.error('Failed to parse Gemini response:', parseError);
-      return mockAnalysis();
+      return mockAnalysis(language);
     }
   } catch (error) {
     console.error('Error calling Gemini API:', error);
-    return mockAnalysis();
+    return mockAnalysis(language);
   }
 };
 
-const mockAnalysis = (): AnalysisResult => {
+const mockAnalysis = (language: 'en' | 'ro' = 'en'): AnalysisResult => {
+  const isRomanian = language === 'ro';
+  
+  if (isRomanian) {
+    return {
+      patterns: [
+        'Potențial de triangulare între membri familiei',
+        'Posibilă încreților în relații primare',
+        'Model intergenerațional de evitare a conflictului',
+      ],
+      traumas: [
+        'Evenimente de pierdere sau separare nerezolvate',
+        'Posibilă traumă relațională în dinamica părinte-copil',
+      ],
+      recommendations: [
+        'Explorați modelele de comunicare familială în terapie',
+        'Considerați terapia individuală pentru membri identificați',
+        'Stabilește granițe sănătoase în relații cheie',
+        'Procesați modelele intergeneraționale cu un terapeut calificat',
+      ],
+      summary:
+        'Genograma sugerează mai dinamici ale sistemului familial care ar putea beneficia de explorare terapeutică. Considerați lucrul cu un terapeut familial autorizat pentru a identifica punctele specifice de intervenție.',
+      disclaimer:
+        'IMPORTANT: Aceasta este o analiză generată de AI doar în scopuri educaționale și NU este un diagnostic clinic. Un terapeut autorizat ar trebui să efectueze o evaluare adecvată.',
+    };
+  }
+  
   return {
     patterns: [
       'Potential triangulation between family members',
