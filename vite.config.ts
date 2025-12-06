@@ -8,6 +8,15 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js'
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
