@@ -14,6 +14,7 @@ import { useGenogramStore } from '../store/genogramStore';
 import { getLayoutedElements } from '../utils/layout';
 import PersonNode from './PersonNode';
 import { Moon, Sun, Lock, Unlock } from 'lucide-react';
+import { getHiddenPeopleIds } from '../utils/siblingCollapse';
 
 const nodeTypes: NodeTypes = {
   personNode: PersonNode,
@@ -22,8 +23,8 @@ const nodeTypes: NodeTypes = {
 type ThemeMode = 'light' | 'dark';
 
 export const GenogramCanvas = () => {
-  const { people, relations, updatePerson } = useGenogramStore();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const { people, relations, updatePerson, siblingGroups, toggleSiblingGroupCollapse: _toggleCollapse } = useGenogramStore();
+  const [nodes, setNodes, onNodesState] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     // Check system preference
@@ -42,17 +43,35 @@ export const GenogramCanvas = () => {
     localStorage.setItem('genogram-theme', theme);
   }, [theme]);
 
+  // Get IDs of hidden people (collapsed siblings)
+  const hiddenPeopleIds = useMemo(
+    () => getHiddenPeopleIds(siblingGroups),
+    [siblingGroups]
+  );
+
   // Memoize layout calculation - only recalculate when people or relations actually change
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(
     () => getLayoutedElements(people, relations),
     [people, relations]
   );
 
+  // Filter out hidden nodes
+  const filteredNodes = useMemo(
+    () => layoutedNodes.filter(node => !hiddenPeopleIds.has(node.id)),
+    [layoutedNodes, hiddenPeopleIds]
+  );
+
+  // Filter out edges to hidden nodes
+  const filteredEdges = useMemo(
+    () => layoutedEdges.filter(edge => !hiddenPeopleIds.has(edge.source) && !hiddenPeopleIds.has(edge.target)),
+    [layoutedEdges, hiddenPeopleIds]
+  );
+
   // Update nodes and edges only when layout changes
   useEffect(() => {
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-  }, [layoutedNodes, layoutedEdges, setNodes, setEdges]);
+    setNodes(filteredNodes);
+    setEdges(filteredEdges);
+  }, [filteredNodes, filteredEdges, setNodes, setEdges]);
 
   const onConnect = useCallback((params: Connection) => {
     if (isInteractionLocked) return; // Disable relation creation when locked
@@ -67,7 +86,7 @@ export const GenogramCanvas = () => {
     }
 
     // Update local state
-    onNodesChange(changes);
+    onNodesState(changes);
     
     // Save position changes to store (only if not locked)
     if (!isInteractionLocked) {
@@ -82,7 +101,7 @@ export const GenogramCanvas = () => {
         }
       });
     }
-  }, [onNodesChange, people, updatePerson, isInteractionLocked]);
+  }, [onNodesState, people, updatePerson, isInteractionLocked]);
 
   // Get gradient style based on theme - Professional gradients from uiGradients
   const getBackgroundGradient = () => {

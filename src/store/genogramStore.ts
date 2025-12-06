@@ -7,9 +7,13 @@ import { devLog, devWarn, devError } from '../utils/errors';
 import { 
   applySiblingAlignment, 
   applyPartnerAlignment,
-  getSiblingsForPerson 
 } from '../utils/alignment';
 import { validateGenogram, type ValidationResult } from '../utils/genogramValidation';
+import { 
+  detectSiblingGroups, 
+  toggleGroupCollapse,
+  type SiblingGroup 
+} from '../utils/siblingCollapse';
 
 // Helper function to check if a relation type is a sibling relation
 const isSiblingRelationType = (type: RelationType): boolean => {
@@ -36,6 +40,9 @@ interface GenogramState {
   currentGenogramTitle: string;
   currentGenogramDescription: string;
   lastRelationSourceId: string | null; // For UX: remember last "from" person in relations
+  
+  // Sibling collapse state
+  siblingGroups: Map<string, SiblingGroup>;
   
   // Validation state
   validationResult: ValidationResult | null;
@@ -66,6 +73,10 @@ interface GenogramState {
   addMedicationRecord: (personId: string, record: MedicationRecord) => void;
   updateMedicationRecord: (personId: string, recordId: string, updates: Partial<MedicationRecord>) => void;
   removeMedicationRecord: (personId: string, recordId: string) => void;
+  
+  // Sibling collapse actions
+  recalculateSiblingGroups: () => void;
+  toggleSiblingGroupCollapse: (groupId: string) => void;
   
   setGenogram: (data: GenogramData) => void;
   
@@ -100,6 +111,7 @@ export const useGenogramStore = create<GenogramState>()(
       currentGenogramTitle: 'Untitled Genogram',
       currentGenogramDescription: '',
       lastRelationSourceId: null,
+      siblingGroups: new Map(),
       validationResult: null,
       allGenograms: [],
       isLoading: false,
@@ -139,30 +151,206 @@ export const useGenogramStore = create<GenogramState>()(
 
       addRelation: (relation) => {
         set((state) => {
-          const updatedRelations = [...state.relations, relation];
+          let updatedRelations = [...state.relations];
           const updatedPeople = [...state.people];
           
-          // Apply automatic alignment based on relation type
+          // Prevent self-relations
+          if (relation.sourceId === relation.targetId) {
+            console.warn('Cannot create self-relation');
+            return { 
+              relations: updatedRelations,
+              people: updatedPeople,
+              lastRelationSourceId: relation.sourceId,
+            };
+          }
+          
+          // Check if relation already exists to avoid duplicates
+          const relationExists = updatedRelations.some(
+            r => r.sourceId === relation.sourceId && r.targetId === relation.targetId && r.type === relation.type
+          );
+          
+          if (relationExists) {
+            return { 
+              relations: updatedRelations,
+              people: updatedPeople,
+              lastRelationSourceId: relation.sourceId,
+            };
+          }
+          
+          // Add the main relation
+          updatedRelations = [...updatedRelations, relation];
+          
+          // Helper function to check if two people are already connected
+          const areConnected = (personA: string, personB: string, relType?: RelationType): boolean => {
+            if (!relType) {
+              // Any connection
+              return updatedRelations.some(
+                r => (r.sourceId === personA && r.targetId === personB) ||
+                     (r.sourceId === personB && r.targetId === personA)
+              );
+            }
+            // Specific type connection
+            return updatedRelations.some(
+              r => (r.sourceId === personA && r.targetId === personB && r.type === relType) ||
+                   (r.sourceId === personB && r.targetId === personA && r.type === relType)
+            );
+          };
+          
+          // Auto-create sibling relations (BIDIRECTIONAL)
           if (isSiblingRelationType(relation.type)) {
-            // Get all siblings including the new connection
-            const siblings = getSiblingsForPerson(relation.sourceId, updatedPeople, updatedRelations);
+            // Find all existing siblings of relation.targetId
+            const existingSiblingsOfTarget = new Set<string>();
+            updatedRelations
+              .filter(r => isSiblingRelationType(r.type))
+              .forEach(r => {
+                if (r.sourceId === relation.targetId) existingSiblingsOfTarget.add(r.targetId);
+                if (r.targetId === relation.targetId) existingSiblingsOfTarget.add(r.sourceId);
+              });
             
-            if (siblings.length > 0) {
-              // Calculate and apply sibling alignment
+            // Find all existing siblings of relation.sourceId
+            const existingSiblingsOfSource = new Set<string>();
+            updatedRelations
+              .filter(r => isSiblingRelationType(r.type) && !(r.sourceId === relation.sourceId && r.targetId === relation.targetId))
+              .forEach(r => {
+                if (r.sourceId === relation.sourceId) existingSiblingsOfSource.add(r.targetId);
+                if (r.targetId === relation.sourceId) existingSiblingsOfSource.add(r.sourceId);
+              });
+            
+            // Connect sourceId to all siblings of targetId (avoid duplicates)
+            existingSiblingsOfTarget.forEach(siblingId => {
+              if (siblingId !== relation.sourceId && !areConnected(relation.sourceId, siblingId, relation.type)) {
+                updatedRelations.push({
+                  id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  sourceId: relation.sourceId,
+                  targetId: siblingId,
+                  type: relation.type,
+                });
+              }
+            });
+            
+            // Connect targetId to all siblings of sourceId (avoid duplicates)
+            existingSiblingsOfSource.forEach(siblingId => {
+              if (siblingId !== relation.targetId && !areConnected(relation.targetId, siblingId, relation.type)) {
+                updatedRelations.push({
+                  id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  sourceId: relation.targetId,
+                  targetId: siblingId,
+                  type: relation.type,
+                });
+              }
+            });
+            
+            // Create the inverse relation for full bidirectionality
+            const inverseExists = updatedRelations.some(
+              r => r.sourceId === relation.targetId && r.targetId === relation.sourceId && r.type === relation.type
+            );
+            
+            if (!inverseExists) {
+              updatedRelations.push({
+                id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                sourceId: relation.targetId,
+                targetId: relation.sourceId,
+                type: relation.type,
+              });
+            }
+            
+            // Get all siblings for alignment
+            const allSiblings = new Set<string>();
+            updatedRelations
+              .filter(r => isSiblingRelationType(r.type))
+              .forEach(r => {
+                if (r.sourceId === relation.sourceId) allSiblings.add(r.targetId);
+                if (r.targetId === relation.sourceId) allSiblings.add(r.sourceId);
+              });
+            
+            if (allSiblings.size > 0) {
               const alignedPositions = applySiblingAlignment(
-                [relation.sourceId, ...siblings.map(s => s.id)],
+                [relation.sourceId, ...Array.from(allSiblings)],
                 updatedPeople,
                 updatedRelations
               );
               
-              // Update people with new positions
               updatedPeople.forEach(person => {
                 if (alignedPositions.has(person.id)) {
                   person.position = alignedPositions.get(person.id);
                 }
               });
             }
-          } else if (relation.type === 'partner') {
+          } 
+          // Auto-connect parents to all children
+          else if (relation.type === 'parent-child' || relation.type === 'adoptive-parent' || relation.type === 'foster-parent') {
+            const parent = relation.sourceId;
+            const child = relation.targetId;
+            
+            // Find all children of this parent
+            const siblingIds = new Set<string>();
+            updatedRelations
+              .filter(r => ['parent-child', 'adoptive-parent', 'foster-parent'].includes(r.type))
+              .filter(r => r.sourceId === parent && r.targetId !== child)
+              .forEach(r => siblingIds.add(r.targetId));
+            
+            // Connect new child to all existing children (siblings)
+            siblingIds.forEach(siblingId => {
+              // Check both directions to avoid duplicates
+              const forwardExists = updatedRelations.some(
+                r => r.sourceId === child && r.targetId === siblingId && isSiblingRelationType(r.type)
+              );
+              const backwardExists = updatedRelations.some(
+                r => r.sourceId === siblingId && r.targetId === child && isSiblingRelationType(r.type)
+              );
+              
+              if (!forwardExists) {
+                updatedRelations.push({
+                  id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  sourceId: child,
+                  targetId: siblingId,
+                  type: 'biological-sibling',
+                });
+              }
+              
+              if (!backwardExists) {
+                updatedRelations.push({
+                  id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  sourceId: siblingId,
+                  targetId: child,
+                  type: 'biological-sibling',
+                });
+              }
+            });
+            
+            // Find other parents of this child and connect new parent to their children
+            const otherParents = new Set<string>();
+            updatedRelations
+              .filter(r => ['parent-child', 'adoptive-parent', 'foster-parent'].includes(r.type))
+              .filter(r => r.targetId === child && r.sourceId !== parent)
+              .forEach(r => otherParents.add(r.sourceId));
+            
+            otherParents.forEach(otherParent => {
+              // Get all children of other parent
+              updatedRelations
+                .filter(r => ['parent-child', 'adoptive-parent', 'foster-parent'].includes(r.type))
+                .filter(r => r.sourceId === otherParent)
+                .forEach(r => {
+                  const otherChild = r.targetId;
+                  
+                  // Check if new parent is already connected to this child
+                  const alreadyConnected = updatedRelations.some(
+                    rel => ['parent-child', 'adoptive-parent', 'foster-parent'].includes(rel.type) &&
+                           rel.sourceId === parent && rel.targetId === otherChild
+                  );
+                  
+                  if (!alreadyConnected) {
+                    updatedRelations.push({
+                      id: `rel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                      sourceId: parent,
+                      targetId: otherChild,
+                      type: relation.type,
+                    });
+                  }
+                });
+            });
+          }
+          else if (relation.type === 'partner') {
             // Apply partner alignment
             const alignedPositions = applyPartnerAlignment(
               relation.sourceId,
@@ -181,11 +369,12 @@ export const useGenogramStore = create<GenogramState>()(
           return { 
             relations: updatedRelations,
             people: updatedPeople,
-            lastRelationSourceId: relation.sourceId, // Remember last "from" person
+            lastRelationSourceId: relation.sourceId,
           };
         });
-        // Auto-save in background
+        // Recalculate sibling groups after adding relation
         setTimeout(() => {
+          get().recalculateSiblingGroups();
           get().saveCurrentGenogram().catch(err => console.warn('Auto-save failed:', err));
         }, 0);
       },
@@ -194,8 +383,9 @@ export const useGenogramStore = create<GenogramState>()(
         set((state) => ({
           relations: state.relations.filter((r) => r.id !== id),
         }));
-        // Auto-save in background
+        // Recalculate sibling groups after removing relation
         setTimeout(() => {
+          get().recalculateSiblingGroups();
           get().saveCurrentGenogram().catch(err => console.warn('Auto-save failed:', err));
         }, 0);
       },
@@ -303,6 +493,21 @@ export const useGenogramStore = create<GenogramState>()(
         profiles: data.profiles || [],
         lastRelationSourceId: null, // Reset when loading new genogram
       }),
+
+      // Sibling collapse actions
+      recalculateSiblingGroups: () => {
+        const state = get();
+        const groups = detectSiblingGroups(state.people, state.relations);
+        set({ siblingGroups: groups });
+        devLog('GenogramStore', `Recalculated ${groups.size} sibling groups`);
+      },
+
+      toggleSiblingGroupCollapse: (groupId: string) => {
+        const state = get();
+        const newGroups = toggleGroupCollapse(groupId, state.siblingGroups);
+        set({ siblingGroups: newGroups });
+        devLog('GenogramStore', `Toggled collapse for group ${groupId}`);
+      },
 
       // Validation actions
       validateCurrentGenogram: () => {

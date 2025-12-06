@@ -6,7 +6,6 @@ import { useRef } from 'react';
 import { AddRelationModal } from '../components/AddRelationModal';
 import { AIAnalysisModal } from '../components/AIAnalysisModal';
 import { AddProfileModal } from '../components/AddProfileModal';
-import { ValidationPanel } from '../components/ValidationPanel';
 import { ReportPanel } from '../components/ReportPanel';
 import { ExportMenu } from '../components/ExportMenu';
 import { AppHeader } from '../components/layout/AppHeader';
@@ -31,7 +30,6 @@ export const Editor = () => {
     loadGenogram,
     createNewGenogram,
     saveCurrentGenogram,
-    validationResult,
     people,
     relations,
     error,
@@ -372,9 +370,6 @@ export const Editor = () => {
       <AddRelationModal isOpen={isRelationModalOpen} onClose={() => setIsRelationModalOpen(false)} />
       <AIAnalysisModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} />
       <AddProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
-
-      {/* Validation Panel */}
-      <ValidationPanel result={validationResult} />
     </div>
   );
 };

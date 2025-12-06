@@ -8,13 +8,23 @@ import { PROFILE_TEMPLATES } from '../services/profileTemplates';
 import { CONDITION_COLORS } from '../constants/conditionColors';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useGenogramStore } from '../store/genogramStore';
+import { SiblingGroupBadge } from './CollapsibleSiblingGroup';
+import { getCollapsedPeopleInfo } from '../utils/siblingCollapse';
 
 const PersonNode = ({ data, selected }: NodeProps<Person>) => {
   const navigate = useNavigate();
+  const { siblingGroups, toggleSiblingGroupCollapse } = useGenogramStore();
   const [showDetails, setShowDetails] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPos, setContextPos] = useState({ x: 0, y: 0 });
   const isDeceased = data.status === 'deceased';
+  
+  // Detectează dacă această persoană e în grup colapsabil
+  const collapsedInfo = useMemo(
+    () => getCollapsedPeopleInfo(data.id, siblingGroups),
+    [data.id, siblingGroups]
+  );
   
   // Memoize computed values to prevent recalculation on every render
   const { bgColor, shapeStyle, emoji } = useMemo(() => {
@@ -117,6 +127,18 @@ const PersonNode = ({ data, selected }: NodeProps<Person>) => {
               );
             })}
           </div>
+        )}
+
+        {/* Sibling group collapse badge */}
+        {collapsedInfo.isInCollapsedGroup && collapsedInfo.groupId === data.id && (
+          <SiblingGroupBadge
+            hiddenCount={collapsedInfo.hiddenCount}
+            isCollapsed={siblingGroups.get(data.id)?.isCollapsed ?? false}
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              toggleSiblingGroupCollapse(data.id);
+            }}
+          />
         )}
       </motion.div>
 
