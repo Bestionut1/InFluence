@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGenogramStore } from '../store/genogramStore';
+import { useLanguage } from '../hooks/useTranslation';
 import { Loader, Download, RefreshCw, AlertTriangle, TrendingUp, Lightbulb, Shield, ArrowLeft, BarChart3, Brain } from 'lucide-react';
 import { analyzeGenogramWithGemini } from '../services/geminiAi';
 import { AppHeader } from '../components/layout/AppHeader';
@@ -13,6 +14,7 @@ import type { AnalysisResult } from '../services/geminiAi';
 export const AIAnalysisPage = () => {
   const navigate = useNavigate();
   const { people, relations } = useGenogramStore();
+  const { language } = useLanguage();
   
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,7 +75,8 @@ export const AIAnalysisPage = () => {
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`genogram-analysis-${new Date().toLocaleDateString()}.pdf`);
+      const dateStr = new Date().toLocaleDateString(language === 'ro' ? 'ro-RO' : 'en-US');
+      pdf.save(`genogram-analysis-${dateStr}.pdf`);
     } finally {
       setIsGeneratingPDF(false);
     }

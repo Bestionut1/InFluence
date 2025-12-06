@@ -2,17 +2,45 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { TestResultWithMetadata } from './testResults';
 
+interface PDFTexts {
+  disclaimer: string;
+  disclaimerText: string;
+  generatedOn: string;
+  scores: string;
+  platform: string;
+}
+
+const getPDFTexts = (language: 'en' | 'ro' = 'en'): PDFTexts => {
+  if (language === 'ro') {
+    return {
+      disclaimer: 'Avertisment Important',
+      disclaimerText: 'Aceste rezultate sunt în scop educațional și nu trebuie considerate sfat psihologic profesional. Dacă aveți probleme cu sănătatea mintală, vă rugăm să consultați un profesionist calificat.',
+      generatedOn: 'Generat pe',
+      scores: 'Punctaje',
+      platform: 'InFluence - Platforma de Evaluare Psihologică',
+    };
+  }
+  return {
+    disclaimer: 'Important Disclaimer',
+    disclaimerText: 'These results are for educational purposes only and should not be considered as professional psychological advice. If you have concerns about your mental health, please consult with a qualified mental health professional.',
+    generatedOn: 'Generated on',
+    scores: 'Scores',
+    platform: 'InFluence - Psychological Assessment Platform',
+  };
+};
+
 /**
- * Export test result to PDF
+ * Export test result to PDF with language support
  */
 export const exportTestResultToPDF = async (
   result: TestResultWithMetadata,
-  containerElementId?: string
+  containerElementId?: string,
+  language: 'en' | 'ro' = 'en'
 ) => {
   try {
     const element = containerElementId
       ? document.getElementById(containerElementId)
-      : createResultsHTML(result);
+      : createResultsHTML(result, language);
 
     if (!element) {
       throw new Error('Could not find element to export');
@@ -56,9 +84,10 @@ export const exportTestResultToPDF = async (
 };
 
 /**
- * Create HTML representation of test results for export
+ * Create HTML representation of test results for export with language support
  */
-const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
+const createResultsHTML = (result: TestResultWithMetadata, language: 'en' | 'ro' = 'en'): HTMLElement => {
+  const texts = getPDFTexts(language);
   const container = document.createElement('div');
   container.style.padding = '20px';
   container.style.backgroundColor = '#0B1120';
@@ -75,7 +104,7 @@ const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
   header.innerHTML = `
     <h1 style="margin: 0; color: #FFFFFF; font-size: 24px;">${result.testName}</h1>
     <p style="margin: 5px 0; color: #B8C5D6; font-size: 14px;">
-      Completed: ${result.createdAt.toLocaleDateString()}
+      ${texts.generatedOn}: ${result.createdAt.toLocaleDateString(language === 'ro' ? 'ro-RO' : 'en-US')}
     </p>
   `;
   container.appendChild(header);
@@ -83,7 +112,7 @@ const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
   // Scores Section
   const scoresSection = document.createElement('div');
   scoresSection.style.marginBottom = '20px';
-  scoresSection.innerHTML = '<h2 style="margin: 0 0 15px 0; color: #FFFFFF; font-size: 18px;">Scores</h2>';
+  scoresSection.innerHTML = `<h2 style="margin: 0 0 15px 0; color: #FFFFFF; font-size: 18px;">${texts.scores}</h2>`;
 
   Object.entries(result.scores).forEach(([key, value]) => {
     const scoreItem = document.createElement('div');
@@ -112,9 +141,8 @@ const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
   disclaimer.style.color = '#B8C5D6';
   disclaimer.style.marginTop = '20px';
   disclaimer.innerHTML = `
-    <strong>Important Disclaimer:</strong><br/>
-    These results are for educational purposes only and should not be considered as professional psychological advice. 
-    If you have concerns about your mental health, please consult with a qualified mental health professional.
+    <strong>${texts.disclaimer}:</strong><br/>
+    ${texts.disclaimerText}
   `;
   container.appendChild(disclaimer);
 
@@ -126,8 +154,8 @@ const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
   footer.style.fontSize = '12px';
   footer.style.color = '#7A8FA6';
   footer.innerHTML = `
-    <p style="margin: 5px 0;">Generated on ${new Date().toLocaleString()}</p>
-    <p style="margin: 5px 0;">InFluence - Psychological Assessment Platform</p>
+    <p style="margin: 5px 0;">${texts.generatedOn} ${new Date().toLocaleString(language === 'ro' ? 'ro-RO' : 'en-US')}</p>
+    <p style="margin: 5px 0;">${texts.platform}</p>
   `;
   container.appendChild(footer);
 
@@ -138,13 +166,22 @@ const createResultsHTML = (result: TestResultWithMetadata): HTMLElement => {
 };
 
 /**
- * Export comparison results to PDF
+ * Export comparison results to PDF with language support
  */
 export const exportComparisonToPDF = async (
   testName: string,
-  results: TestResultWithMetadata[]
+  results: TestResultWithMetadata[],
+  language: 'en' | 'ro' = 'en'
 ) => {
   try {
+    const texts = getPDFTexts(language);
+    const isRomanian = language === 'ro';
+    const trendAnalysisLabel = isRomanian ? 'Analiză de Tendință' : 'Trend Analysis';
+    const dateLabel = texts.generatedOn;
+    const dateLabel2 = isRomanian ? 'Data' : 'Date';
+    const durationLabel = isRomanian ? 'Durata' : 'Duration';
+    const resultLabel = isRomanian ? 'Rezultatul' : 'Result';
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -156,12 +193,12 @@ export const exportComparisonToPDF = async (
 
     // Title
     pdf.setFontSize(20);
-    pdf.text(`${testName} - Trend Analysis`, 20, yPosition);
+    pdf.text(`${testName} - ${trendAnalysisLabel}`, 20, yPosition);
     yPosition += 15;
 
     pdf.setFontSize(12);
     pdf.setTextColor(100, 100, 100);
-    pdf.text(`Generated on ${new Date().toLocaleString()}`, 20, yPosition);
+    pdf.text(`${dateLabel}: ${new Date().toLocaleString(isRomanian ? 'ro-RO' : 'en-US')}`, 20, yPosition);
     yPosition += 10;
 
     // Results
@@ -173,14 +210,14 @@ export const exportComparisonToPDF = async (
       }
 
       pdf.setFontSize(14);
-      pdf.text(`Result #${results.length - index}`, 20, yPosition);
+      pdf.text(`${resultLabel} #${results.length - index}`, 20, yPosition);
       yPosition += 7;
 
       pdf.setFontSize(10);
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`Date: ${result.createdAt.toLocaleDateString()}`, 20, yPosition);
+      pdf.text(`${dateLabel2}: ${result.createdAt.toLocaleDateString(isRomanian ? 'ro-RO' : 'en-US')}`, 20, yPosition);
       yPosition += 5;
-      pdf.text(`Duration: ${Math.floor(result.duration / 60)}m ${result.duration % 60}s`, 20, yPosition);
+      pdf.text(`${durationLabel}: ${Math.floor(result.duration / 60)}m ${result.duration % 60}s`, 20, yPosition);
       yPosition += 10;
 
       // Scores

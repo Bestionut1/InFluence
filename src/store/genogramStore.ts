@@ -123,7 +123,17 @@ export const useGenogramStore = create<GenogramState>()(
 
       // Local actions
       addPerson: (person) => {
-        set((state) => ({ people: [...state.people, person] }));
+        set((state) => {
+          // Check if trying to set as principal when another principal already exists
+          if (person.isPrincipal === true) {
+            const currentPrincipal = state.people.find(p => p.isPrincipal);
+            if (currentPrincipal) {
+              console.warn('Cannot add another principal person. Only one principal allowed per genogram.');
+              return { people: state.people };
+            }
+          }
+          return { people: [...state.people, person] };
+        });
         // Auto-save in background (don't wait)
         setTimeout(() => {
           get().saveCurrentGenogram().catch(err => console.warn('Auto-save failed:', err));
@@ -178,9 +188,10 @@ export const useGenogramStore = create<GenogramState>()(
             };
           }
           
-          // Check if relation already exists to avoid duplicates
+          // Check if relation already exists to avoid duplicates (both directions)
           const relationExists = updatedRelations.some(
-            r => r.sourceId === relation.sourceId && r.targetId === relation.targetId && r.type === relation.type
+            r => (r.sourceId === relation.sourceId && r.targetId === relation.targetId && r.type === relation.type) ||
+                 (r.sourceId === relation.targetId && r.targetId === relation.sourceId && r.type === relation.type)
           );
           
           if (relationExists) {

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Edit2, Save, X, LogOut, User, Upload, FileText, Shield, 
-  Download, Trash2, Clock, LogIn, Bell, CheckCircle 
+  Download, Trash2, Bell, CheckCircle 
 } from 'lucide-react';
 import { AppHeader } from '../components/layout/AppHeader';
 import { Button } from '../components/ui/Button';
@@ -303,28 +303,6 @@ export const UserProfile = () => {
                     >
                       {t.common.romanian}
                     </Button>
-                  </div>
-                </CardBody>
-              </Card>
-            </motion.div>
-
-            {/* Activity */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary-400" />
-                    Activity
-                  </h3>
-                </CardHeader>
-                <CardBody className="p-3">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <LogIn className="w-3 h-3 text-teal-400" />
-                    Last login: Just now
                   </div>
                 </CardBody>
               </Card>

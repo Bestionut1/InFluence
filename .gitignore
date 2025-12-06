@@ -13,6 +13,11 @@ dist-ssr
 dev-dist
 *.local
 
+# Environment variables (NEVER commit API keys!)
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,4 +30,3 @@ dev-dist
 *.sw?
 
 .vercel
-.env*.local

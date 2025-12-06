@@ -23,6 +23,7 @@ export const ro = {
     close: 'Închide',
     back: 'Înapoi',
     next: 'Următoarele',
+    tutorial: 'Tutorial',
     prev: 'Anterior',
     loading: 'Se încarcă...',
     error: 'Eroare',
@@ -287,6 +288,12 @@ export const ro = {
     recommendations: 'Recomandări',
     generating: 'Se generează analiza...',
     noAnalysis: 'Nici o analiză disponibilă încă.',
+    downloadPDF: 'Descarcă Raportul ca PDF',
+    pdfTitle: 'Raport de Analiză Genograma',
+    pdfGenerated: 'Generat pe',
+    pdfDisclaimer: 'Avertisment Important',
+    pdfDisclaimerText: 'Această analiză este în scop educațional și clinic și nu trebuie considerată diagnostic psihologic profesional. Vă rugăm să consultați un profesionist calificat în sănătate mintală pentru evaluare și recomandări de tratament precise.',
+    pdfGeneratingError: 'Eroare la generarea PDF. Vă rugăm încercați din nou.',
   },
 
   // Chat

@@ -13,7 +13,6 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { GenogramList } from './GenogramList';
 import { NewGenogramModal } from './NewGenogramModal';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
 import { Card, CardBody } from '../ui/Card';
 
 const ONBOARDING_KEY = 'genogram-onboarding-completed';
@@ -36,7 +35,6 @@ export const DashboardContainer = React.memo(() => {
   const { createNewGenogram } = useGenogramStore();
 
   // Local UI state
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'members'>('recent');
   const [newGenogramModalOpen, setNewGenogramModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -80,9 +78,9 @@ export const DashboardContainer = React.memo(() => {
   }, [refresh]);
 
   // Debounced search handler
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+  // const handleSearch = useCallback((query: string) => {
+  //   setSearchQuery(query);
+  // }, []);
 
   // Handle new genogram creation
   const handleCreateGenogram = useCallback(
@@ -219,7 +217,7 @@ export const DashboardContainer = React.memo(() => {
                 onClick={() => navigate('/tutorial')}
                 className="whitespace-nowrap"
               >
-                {t.common.next}
+                {t.common.tutorial}
               </Button>
               <Button
                 variant="ghost"
@@ -237,17 +235,6 @@ export const DashboardContainer = React.memo(() => {
       {/* Controls */}
       <div className="space-y-4 mb-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          {/* Search */}
-          <div className="flex-1 max-w-xs">
-            <Input
-              type="text"
-              placeholder={t.common.search}
-              onChange={e => handleSearch(e.target.value)}
-              disabled={loading}
-              className="w-full"
-            />
-          </div>
-
           {/* Sort */}
           <div>
             <label htmlFor="dashboard-sort-select" className="sr-only">Sort by</label>
@@ -320,7 +307,7 @@ export const DashboardContainer = React.memo(() => {
       {!loading && (
         <GenogramList
           genograms={genograms}
-          searchQuery={searchQuery}
+          searchQuery=""
           sortBy={sortBy}
           onOpen={handleOpen}
           onDelete={handleDeleteRequest}

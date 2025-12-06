@@ -23,6 +23,7 @@ export const en = {
     close: 'Close',
     back: 'Back',
     next: 'Next',
+    tutorial: 'Tutorial',
     prev: 'Previous',
     loading: 'Loading...',
     error: 'Error',
@@ -287,6 +288,12 @@ export const en = {
     recommendations: 'Recommendations',
     generating: 'Generating analysis...',
     noAnalysis: 'No analysis available yet.',
+    downloadPDF: 'Download Report as PDF',
+    pdfTitle: 'Genogram Analysis Report',
+    pdfGenerated: 'Generated on',
+    pdfDisclaimer: 'Important Disclaimer',
+    pdfDisclaimerText: 'This analysis is for educational and clinical reference purposes only and should not be considered as professional psychological diagnosis. Please consult with a qualified mental health professional for accurate assessment and treatment recommendations.',
+    pdfGeneratingError: 'Error generating PDF. Please try again.',
   },
 
   // Chat

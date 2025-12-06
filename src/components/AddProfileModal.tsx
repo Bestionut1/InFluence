@@ -83,7 +83,7 @@ export const AddProfileModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.9, y: 20, opacity: 0 }}
             transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-            className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-700/50 rounded-3xl w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto relative"
+            className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-700/50 rounded-3xl w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Background accent gradient */}

@@ -6,15 +6,13 @@ import { useRef } from 'react';
 import { AddRelationModal } from '../components/AddRelationModal';
 import { AIAnalysisModal } from '../components/AIAnalysisModal';
 import { AddProfileModal } from '../components/AddProfileModal';
-import { ReportPanel } from '../components/ReportPanel';
 import { ExportMenu } from '../components/ExportMenu';
 import { AppHeader } from '../components/layout/AppHeader';
-import { Plus, Link2, Save, Sparkles, BookOpen, User, Zap, AlertCircle, CheckCircle, BarChart3 } from 'lucide-react';
+import { Plus, Link2, Save, Sparkles, BookOpen, User, Zap, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { useGenogramStore } from '../store/genogramStore';
 import { useTranslation } from '../hooks/useTranslation';
-import { generateStatistics } from '../services/reportGenerator';
 
 export const Editor = () => {
   const { id } = useParams();
@@ -30,8 +28,6 @@ export const Editor = () => {
     loadGenogram,
     createNewGenogram,
     saveCurrentGenogram,
-    people,
-    relations,
     error,
     clearError,
   } = useGenogramStore();
@@ -42,8 +38,6 @@ export const Editor = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'canvas' | 'report'>('canvas');
-  const [report, setReport] = useState<ReturnType<typeof generateStatistics> | null>(null);
 
   // Load genogram on mount
   useEffect(() => {
@@ -70,14 +64,6 @@ export const Editor = () => {
     });
     // Only depend on 'id' to avoid infinite loops and unnecessary reloads
   }, [id]);
-
-  // Generate report when switching to report tab or when data changes
-  useEffect(() => {
-    if (activeTab === 'report' && people.length > 0) {
-      const newReport = generateStatistics(people, relations);
-      setReport(newReport);
-    }
-  }, [activeTab, people, relations]);
 
   const handleCanvasClick = () => {
     setIsSidebarCollapsed(true);
@@ -119,9 +105,9 @@ export const Editor = () => {
     navigate(`/analysis/${id}`);
   };
 
-  const handleOpenReport = () => {
-    navigate(`/report/${id}`);
-  };
+  // const handleOpenReport = () => {
+  //   navigate(`/report/${id}`);
+  // };
 
   return (
     <div className="h-screen flex flex-col bg-bg-dark page-enter">
@@ -164,14 +150,6 @@ export const Editor = () => {
               onClick={handleAIAnalysis}
             >
               <span className="hidden sm:inline">{t.editor.analyze}</span>
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<BarChart3 className="w-4 h-4" />}
-              onClick={handleOpenReport}
-            >
-              <span className="hidden sm:inline">Report</span>
             </Button>
             <Button
               variant="secondary"
@@ -294,43 +272,28 @@ export const Editor = () => {
           {/* Tab Navigation */}
           <div className="flex justify-start border-b border-slate-700 bg-slate-900/50 backdrop-blur gap-8 pl-80">
             <button
-              onClick={() => setActiveTab('canvas')}
-              className={`px-4 py-3 font-medium text-sm flex items-center gap-2 transition-all border-b-2 ${
-                activeTab === 'canvas'
-                  ? 'border-primary-500 text-primary-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-300'
-              }`}
+              className={`px-4 py-3 font-medium text-sm flex items-center gap-2 transition-all border-b-2 border-primary-500 text-primary-300`}
             >
               <BookOpen className="w-4 h-4" />
               {t.editor.genogram}
             </button>
             <button
-              onClick={() => setActiveTab('report')}
-              className={`px-4 py-3 font-medium text-sm flex items-center gap-2 transition-all border-b-2 ${
-                activeTab === 'report'
-                  ? 'border-primary-500 text-primary-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-300'
-              }`}
+              className={`px-4 py-3 font-medium text-sm flex items-center gap-2 transition-all border-b-2 border-transparent text-slate-400 hover:text-slate-300 cursor-not-allowed opacity-50`}
+              disabled
             >
-              <BarChart3 className="w-4 h-4" />
-              {t.editor.report}
+              Report
             </button>
           </div>
 
           {/* Tab Content */}
           <div className="flex-1 overflow-hidden">
-            {activeTab === 'canvas' ? (
-              <div className="cursor-pointer overflow-hidden h-full w-full">
-                <GenogramCanvas />
-              </div>
-            ) : (
-              <ReportPanel report={report} />
-            )}
+            <div className="cursor-pointer overflow-hidden h-full w-full">
+              <GenogramCanvas />
+            </div>
           </div>
           
           {/* Floating Action Buttons - Mobile/Tablet */}
-          {activeTab === 'canvas' && (
-            <div className="absolute bottom-8 right-8 flex flex-col gap-3 md:hidden">
+          <div className="absolute bottom-8 right-8 flex flex-col gap-3 md:hidden">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
@@ -359,7 +322,6 @@ export const Editor = () => {
                 <User className="w-6 h-6" />
               </motion.button>
             </div>
-          )}
         </main>
       </div>
 
