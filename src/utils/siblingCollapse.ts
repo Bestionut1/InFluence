@@ -22,11 +22,13 @@ export interface CollapsedPeopleInfo {
 
 /**
  * Detectează grupuri de frați care trebuie collapse-ate
+ * Acum cu logică degree-aware din principalId
  * Regula: Dacă sunt >2 frați, al doilea devine grup colapsabil
  */
 export function detectSiblingGroups(
   _people: Person[],
-  relations: Relation[]
+  relations: Relation[],
+  principalId?: string
 ): Map<string, SiblingGroup> {
   const groups = new Map<string, SiblingGroup>();
 
@@ -54,20 +56,28 @@ export function detectSiblingGroups(
   siblingClusters.forEach((cluster) => {
     const clusterId = Array.from(cluster).sort().join('|');
     
-    if (!processedClusters.has(clusterId) && cluster.size > 2) {
+    if (!processedClusters.has(clusterId) && cluster.size > 1) {
       processedClusters.add(clusterId);
       
       // Sort siblings for consistent behavior
       const sortedSiblings = Array.from(cluster).sort();
-      const secondSiblingId = sortedSiblings[1]; // Al doilea devine container
       
-      groups.set(secondSiblingId, {
-        id: secondSiblingId,
-        parentIds: [], // Not tracking parents for sibling-only relations
-        siblingIds: sortedSiblings,
-        collapsedSiblingIds: sortedSiblings.slice(2), // All except first 2
-        isCollapsed: true,
-      });
+      // Check if we should allow collapse for this group
+      const shouldCollapse = principalId 
+        ? shouldAllowCollapseForGroup(sortedSiblings, principalId, relations)
+        : sortedSiblings.length > 2; // Default behavior if no principal
+      
+      if (shouldCollapse && sortedSiblings.length > 2) {
+        const secondSiblingId = sortedSiblings[1]; // Al doilea devine container
+        
+        groups.set(secondSiblingId, {
+          id: secondSiblingId,
+          parentIds: [], // Not tracking parents for sibling-only relations
+          siblingIds: sortedSiblings,
+          collapsedSiblingIds: sortedSiblings.slice(2), // All except first 2
+          isCollapsed: true,
+        });
+      }
     }
   });
 
@@ -157,4 +167,81 @@ export function validateSiblingGroup(group: SiblingGroup): boolean {
     group.siblingIds.includes(group.id) &&
     group.collapsedSiblingIds.every(id => group.siblingIds.includes(id))
   );
+}
+
+/**
+ * Calculate the generational distance/degree from principal person
+ * Uses BFS (breadth-first search) to find shortest path
+ * 
+ * Degree 0: The principal person themselves
+ * Degree 1: Parents, children, partners, grandparents
+ * Degree 2: Siblings, aunts/uncles, cousins
+ * Degree 3+: Distant relatives
+ */
+export function calculateDegreeFromPrincipal(
+  personId: string,
+  relations: Relation[],
+  principalId: string
+): number {
+  if (personId === principalId) return 0;
+
+  const visited = new Set<string>();
+  const queue: [personId: string, degree: number][] = [[principalId, 0]];
+
+  while (queue.length > 0) {
+    const [currentId, currentDegree] = queue.shift()!;
+
+    if (currentId === personId) return currentDegree;
+    if (visited.has(currentId)) continue;
+
+    visited.add(currentId);
+
+    // Find all directly related people (any relation type)
+    const relatedIds = new Set<string>();
+    relations.forEach((rel) => {
+      if (rel.sourceId === currentId) relatedIds.add(rel.targetId);
+      if (rel.targetId === currentId) relatedIds.add(rel.sourceId);
+    });
+
+    // Add unvisited related people to queue
+    relatedIds.forEach((id) => {
+      if (!visited.has(id)) {
+        queue.push([id, currentDegree + 1]);
+      }
+    });
+  }
+
+  return 999; // Not found / not related
+}
+
+/**
+ * Determine if a sibling group should allow collapse based on degree from principal
+ * 
+ * Degree 0 (principal): Never collapse
+ * Degree 1 (parents, children, partners, grandparents): Never collapse
+ * Degree 2 (siblings, uncles/aunts, cousins): Collapse if >2 siblings
+ * Degree 3+ (distant relatives): Collapse if >1
+ */
+export function shouldAllowCollapseForGroup(
+  siblingGroupIds: string[],
+  principalId: string,
+  relations: Relation[]
+): boolean {
+  if (siblingGroupIds.length < 2) return false;
+
+  // Calculate degree for first sibling (all in group have same degree)
+  const degree = calculateDegreeFromPrincipal(
+    siblingGroupIds[0],
+    relations,
+    principalId
+  );
+
+  // Degree 0 & 1: Never collapse
+  if (degree <= 1) return false;
+
+  // Degree 2: Collapse only if >2 siblings
+  if (degree === 2) return siblingGroupIds.length > 2;
+
+  // Degree 3+: Collapse if >1
+  return siblingGroupIds.length > 1;
 }

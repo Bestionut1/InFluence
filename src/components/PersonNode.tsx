@@ -88,6 +88,48 @@ const PersonNode = ({ data, selected }: NodeProps<Person>) => {
           </div>
         )}
         
+        {/* Pregnancy/Miscarriage/Stillbirth symbols */}
+        {data.status === 'pregnant' && (
+          <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow-md">
+              {/* Triangle for pregnancy */}
+              <polygon points="12,4 20,18 4,18" fill="none" stroke="#8b5cf6" strokeWidth="2" />
+            </svg>
+          </div>
+        )}
+        
+        {data.status === 'miscarriage' && (
+          <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow-md">
+              {/* Triangle with X for miscarriage */}
+              <polygon points="12,4 20,18 4,18" fill="none" stroke="#ef4444" strokeWidth="2" />
+              <line x1="6" y1="6" x2="18" y2="16" stroke="#ef4444" strokeWidth="1.5" />
+              <line x1="18" y1="6" x2="6" y2="16" stroke="#ef4444" strokeWidth="1.5" />
+            </svg>
+          </div>
+        )}
+        
+        {data.status === 'stillbirth' && (
+          <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow-md">
+              {/* Filled triangle for stillbirth */}
+              <polygon points="12,4 20,18 4,18" fill="#6b7280" stroke="#374151" strokeWidth="1.5" />
+              <line x1="6" y1="6" x2="18" y2="16" stroke="#374151" strokeWidth="1.5" />
+              <line x1="18" y1="6" x2="6" y2="16" stroke="#374151" strokeWidth="1.5" />
+            </svg>
+          </div>
+        )}
+        
+        {data.status === 'abortion' && (
+          <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" className="drop-shadow-md">
+              {/* Triangle with horizontal line for abortion */}
+              <polygon points="12,4 20,18 4,18" fill="none" stroke="#f97316" strokeWidth="2" />
+              <line x1="4" y1="12" x2="20" y2="12" stroke="#f97316" strokeWidth="2" />
+            </svg>
+          </div>
+        )}
+        
         <div className="flex flex-col items-center gap-2 text-center z-10">
           <div className={`p-1.5 rounded-full ${isDeceased ? 'bg-gray-700' : 'bg-ocean-600'}`}>
             {isDeceased ? <Skull className="w-4 h-4 text-gray-300" /> : <User className="w-4 h-4 text-white" />}

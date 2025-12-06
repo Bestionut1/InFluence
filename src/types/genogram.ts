@@ -1,5 +1,5 @@
 export type Gender = 'male' | 'female' | 'non-binary' | 'unknown';
-export type PersonStatus = 'living' | 'deceased';
+export type PersonStatus = 'living' | 'deceased' | 'pregnant' | 'miscarriage' | 'stillbirth' | 'abortion';
 export type Status = PersonStatus; // Alias for backward compatibility
 export type ProfileType = 'template' | 'custom';
 export type RelationQuality = 'strong' | 'moderate' | 'weak' | 'conflicted' | 'neutral';
@@ -119,6 +119,12 @@ export type RelationType =
   | 'adoptive-child'
   | 'foster-parent'
   | 'foster-child'
+  // Traumatic/Abusive relations (APA Clinical Standards)
+  | 'physical-abuse'
+  | 'emotional-abuse'
+  | 'sexual-abuse'
+  | 'neglect'
+  | 'violence'
   // Relationship qualities
   | 'close'
   | 'distant'

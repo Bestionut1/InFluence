@@ -197,8 +197,14 @@ const getEdgeStyle = (type: RelationType) => {
     return { stroke: '#ec4899', strokeWidth: 2.5 };
   }
   
-  // Quality-based relations
+  // Traumatic/Abusive relations (APA Clinical Standards) - distinct styles
   switch (type) {
+    case 'physical-abuse': return { stroke: '#dc2626', strokeWidth: 3, strokeDasharray: '5,5' };
+    case 'sexual-abuse': return { stroke: '#9333ea', strokeWidth: 2.5, strokeDasharray: '3,3' };
+    case 'emotional-abuse': return { stroke: '#d97706', strokeWidth: 2.5, strokeDasharray: '4,4' };
+    case 'neglect': return { stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '2,4' };
+    case 'violence': return { stroke: '#991b1b', strokeWidth: 3, strokeDasharray: '6,2' };
+    
     case 'conflict': return { stroke: '#ef4444', strokeWidth: 2, strokeDasharray: '5,5' };
     case 'close': return { stroke: '#38bdf8', strokeWidth: 3 };
     case 'distant': return { stroke: '#94a3b8', strokeDasharray: '4,4' };

@@ -13,7 +13,7 @@ export const RelationshipTypeSelector = ({
   disabled = false,
 }: RelationshipTypeSelectorProps) => {
   const t = useTranslation();
-  const [activeTab, setActiveTab] = useState<'family' | 'partnership' | 'other'>('family');
+  const [activeTab, setActiveTab] = useState<'family' | 'partnership' | 'other' | 'trauma'>('family');
 
   const relationshipCategories = {
     family: {
@@ -65,6 +65,17 @@ export const RelationshipTypeSelector = ({
         { value: 'dependent', label: t.relationshipTypes.dependent },
       ],
     },
+    trauma: {
+      label: 'Trauma/Abuse',
+      icon: '⚠️',
+      types: [
+        { value: 'physical-abuse', label: 'Physical Abuse' },
+        { value: 'emotional-abuse', label: 'Emotional Abuse' },
+        { value: 'sexual-abuse', label: 'Sexual Abuse' },
+        { value: 'neglect', label: 'Neglect' },
+        { value: 'violence', label: 'Violence' },
+      ],
+    },
   };
 
   const currentCategory = relationshipCategories[activeTab];
@@ -76,7 +87,7 @@ export const RelationshipTypeSelector = ({
 
       {/* Tab Navigation */}
       <div className="flex gap-2 bg-deep border border-ocean-800 rounded-lg p-1">
-        {(['family', 'partnership', 'other'] as const).map((tab) => (
+        {(['family', 'partnership', 'other', 'trauma'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

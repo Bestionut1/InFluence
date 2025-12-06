@@ -74,6 +74,9 @@ interface GenogramState {
   updateMedicationRecord: (personId: string, recordId: string, updates: Partial<MedicationRecord>) => void;
   removeMedicationRecord: (personId: string, recordId: string) => void;
   
+  // Principal person management
+  setPrincipalPerson: (personId: string) => void;
+  
   // Sibling collapse actions
   recalculateSiblingGroups: () => void;
   toggleSiblingGroupCollapse: (groupId: string) => void;
@@ -128,9 +131,20 @@ export const useGenogramStore = create<GenogramState>()(
       },
       
       updatePerson: (id, updates) => {
-        set((state) => ({
-          people: state.people.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-        }));
+        set((state) => {
+          // If trying to set isPrincipal to true, validate there's no other principal
+          if (updates.isPrincipal === true) {
+            const currentPrincipal = state.people.find(p => p.isPrincipal && p.id !== id);
+            if (currentPrincipal) {
+              console.warn('Cannot set principal: another principal already exists. Delete current principal first.');
+              return { people: state.people };
+            }
+          }
+          
+          return {
+            people: state.people.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+          };
+        });
         // Auto-save in background
         setTimeout(() => {
           get().saveCurrentGenogram().catch(err => console.warn('Auto-save failed:', err));
@@ -494,10 +508,36 @@ export const useGenogramStore = create<GenogramState>()(
         lastRelationSourceId: null, // Reset when loading new genogram
       }),
 
+      // Principal person management
+      setPrincipalPerson: (personId: string) => {
+        set((state) => {
+          // Find if there's already a principal
+          const currentPrincipal = state.people.find(p => p.isPrincipal && p.id !== personId);
+          
+          if (currentPrincipal) {
+            console.warn('Cannot set principal: another principal already exists. Delete current principal first.');
+            return state;
+          }
+
+          // Set the new principal and remove principal from all others
+          return {
+            people: state.people.map(p => ({
+              ...p,
+              isPrincipal: p.id === personId ? true : false
+            }))
+          };
+        });
+        // Auto-save in background
+        setTimeout(() => {
+          get().saveCurrentGenogram().catch(err => console.warn('Auto-save failed:', err));
+        }, 0);
+      },
+
       // Sibling collapse actions
       recalculateSiblingGroups: () => {
         const state = get();
-        const groups = detectSiblingGroups(state.people, state.relations);
+        const principalId = state.people.find(p => p.isPrincipal)?.id;
+        const groups = detectSiblingGroups(state.people, state.relations, principalId);
         set({ siblingGroups: groups });
         devLog('GenogramStore', `Recalculated ${groups.size} sibling groups`);
       },
