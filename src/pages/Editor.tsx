@@ -8,11 +8,12 @@ import { AIAnalysisModal } from '../components/AIAnalysisModal';
 import { AddProfileModal } from '../components/AddProfileModal';
 import { ExportMenu } from '../components/ExportMenu';
 import { AppHeader } from '../components/layout/AppHeader';
-import { Plus, Link2, Save, Sparkles, BookOpen, User, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Link2, Save, Sparkles, BookOpen, User, Zap, AlertCircle, CheckCircle, Loader, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { useGenogramStore } from '../store/genogramStore';
 import { useTranslation } from '../hooks/useTranslation';
+import { testPeople, testRelations } from '../data/testGenogram';
 
 export const Editor = () => {
   const { id } = useParams();
@@ -30,6 +31,9 @@ export const Editor = () => {
     saveCurrentGenogram,
     error,
     clearError,
+    people,
+    addPerson,
+    addRelation,
   } = useGenogramStore();
 
   const [isPersonModalOpen, setIsPersonModalOpen] = useState(false);
@@ -38,6 +42,7 @@ export const Editor = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLoadingTestData, setIsLoadingTestData] = useState(false);
 
   // Load genogram on mount
   useEffect(() => {
@@ -98,6 +103,35 @@ export const Editor = () => {
       console.error('Error saving:', err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLoadTestData = async () => {
+    setIsLoadingTestData(true);
+    try {
+      // Clear existing people first
+      if (people.length > 0) {
+        // We'll add new ones - the store will handle duplicates via IDs
+      }
+      
+      // Add all test people
+      for (const person of testPeople) {
+        addPerson(person);
+      }
+      
+      // Add all test relations
+      for (const relation of testRelations) {
+        addRelation(relation);
+      }
+      
+      // Save to storage
+      await saveCurrentGenogram();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error loading test data:', err);
+    } finally {
+      setIsLoadingTestData(false);
     }
   };
 
@@ -249,6 +283,25 @@ export const Editor = () => {
                 onClick={() => setIsProfileModalOpen(true)}
               >
                 {t.editor.addProfile}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={isLoadingTestData ? <Loader className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                className="w-full justify-center"
+                onClick={handleLoadTestData}
+                disabled={isLoadingTestData}
+              >
+                Load Test Data
+              </Button>
+              <Button
+                variant="tertiary"
+                size="sm"
+                icon={<HelpCircle className="w-4 h-4" />}
+                className="w-full justify-center"
+                onClick={() => navigate('/tutorial')}
+              >
+                Tutorial
               </Button>
             </div>
           </div>
